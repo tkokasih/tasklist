@@ -303,6 +303,90 @@ export const addTask = (
 	});
 };
 
+const findTaskContainer = (project: Project, parentIds: string[]): Task[] | null => {
+	let container: Task[] = project.tasks;
+
+	for (const parentId of parentIds) {
+		const parentTask = container.find((task) => task.id === parentId);
+		if (!parentTask) {
+			return null;
+		}
+		container = parentTask.children;
+	}
+
+	return container;
+};
+
+const touchAncestors = (project: Project, parentIds: string[], timestamp: string) => {
+	project.updatedAt = timestamp;
+
+	let container: Task[] = project.tasks;
+	for (const parentId of parentIds) {
+		const parentTask = container.find((task) => task.id === parentId);
+		if (!parentTask) {
+			return;
+		}
+		parentTask.updatedAt = timestamp;
+		container = parentTask.children;
+	}
+};
+
+export const addTaskAfter = (
+	projects: Project[],
+	targetTaskId: string,
+	title: string
+): { projects: Project[]; task: Task | null; changed: boolean } => {
+	const located = locateTask(projects, targetTaskId);
+	if (!located) {
+		return { projects, task: null, changed: false };
+	}
+
+	const nextProjects = cloneProjects(projects);
+	const project = nextProjects.find((candidate) => candidate.id === located.project.id);
+	if (!project) {
+		return { projects, task: null, changed: false };
+	}
+
+	const container = findTaskContainer(project, located.parentIds);
+	if (!container) {
+		return { projects, task: null, changed: false };
+	}
+
+	const timestamp = now();
+	const newTask = createTask(title);
+
+	container.splice(located.index + 1, 0, newTask);
+	touchAncestors(project, located.parentIds, timestamp);
+
+	return { projects: nextProjects, task: newTask, changed: true };
+};
+
+export const removeTaskById = (
+	projects: Project[],
+	taskId: string
+): { projects: Project[]; changed: boolean } => {
+	const located = locateTask(projects, taskId);
+	if (!located) {
+		return { projects, changed: false };
+	}
+
+	const nextProjects = cloneProjects(projects);
+	const project = nextProjects.find((candidate) => candidate.id === located.project.id);
+	if (!project) {
+		return { projects, changed: false };
+	}
+
+	const container = findTaskContainer(project, located.parentIds);
+	if (!container) {
+		return { projects, changed: false };
+	}
+
+	container.splice(located.index, 1);
+	touchAncestors(project, located.parentIds, now());
+
+	return { projects: nextProjects, changed: true };
+};
+
 const ensureSessions = (task: Task): TaskSession[] => {
 	if (Array.isArray(task.sessions)) {
 		return task.sessions;

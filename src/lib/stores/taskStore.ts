@@ -2,6 +2,7 @@ import { browser } from '$app/environment';
 import { derived, get, writable } from 'svelte/store';
 import {
 	addTask as addTaskToProject,
+	addTaskAfter,
 	applySnapshot,
 	createInitialData,
 	createProject,
@@ -10,6 +11,7 @@ import {
 	incrementTaskTime,
 	locateTask,
 	moveTask,
+	removeTaskById,
 	setTaskStatus,
 	updateTaskById
 } from '$lib/core/taskTree';
@@ -331,6 +333,65 @@ export const taskStore = {
 			...data,
 			projects: addTaskToProject(data.projects, projectId, title.trim() || 'Untitled task', parentTaskId)
 		}));
+	},
+
+	createSiblingTaskAfter(taskId: string) {
+		let createdTaskId: string | null = null;
+
+		store.update((state) => {
+			const { projects, task, changed } = addTaskAfter(state.data.projects, taskId, '');
+			if (!changed || !task) {
+				return state;
+			}
+
+			createdTaskId = task.id;
+
+			const nextData = touchData({
+				...state.data,
+				projects
+			});
+
+			return { ...state, data: nextData };
+		});
+
+		return createdTaskId;
+	},
+
+	deleteTask(taskId: string) {
+		let clearedTimer = false;
+		let removed = false;
+
+		store.update((state) => {
+			const { projects, changed } = removeTaskById(state.data.projects, taskId);
+			if (!changed) {
+				return state;
+			}
+
+			removed = true;
+			const wasActive = state.data.activeTaskId === taskId;
+			const nextData = touchData({
+				...state.data,
+				projects,
+				activeTaskId: wasActive ? null : state.data.activeTaskId,
+				recentTaskIds: state.data.recentTaskIds.filter((id) => id !== taskId)
+			});
+
+			clearedTimer = wasActive;
+
+			return {
+				...state,
+				data: nextData,
+				previewTaskId: state.previewTaskId === taskId ? null : state.previewTaskId,
+				timerStartedAt: wasActive ? null : state.timerStartedAt,
+				lastTickAt: wasActive ? null : state.lastTickAt
+			};
+		});
+
+		if (clearedTimer) {
+			stopTicking();
+		}
+
+		return removed;
 	},
 
 	updateTaskTitle(taskId: string, title: string) {

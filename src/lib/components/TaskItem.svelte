@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tick } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import type { Task } from '$lib/core/taskTypes';
 	import { formatTimestamp } from '$lib/core/time';
 	import { taskStore } from '$lib/stores/taskStore';
@@ -16,6 +16,9 @@
 	let subtaskTitle = '';
 	let titleInput: HTMLInputElement | null = null;
 	let subtaskInput: HTMLInputElement | null = null;
+	let isDraftNewTask = false;
+	let wasEditing = false;
+	let initialTitleSnapshot = task.title.trim();
 
 	$: state = $taskStore;
 	$: isActive = state.data.activeTaskId === task.id;
@@ -26,15 +29,20 @@
 
 	$: if (!editing) {
 		draftTitle = task.title;
+		initialTitleSnapshot = task.title.trim();
 	}
 
-	$: if (editing) {
-		tick().then(() => {
-			titleInput?.focus();
-			titleInput?.select();
-		});
-	}
+	$: {
+		if (editing && !wasEditing) {
+			initialTitleSnapshot = draftTitle.trim();
+			tick().then(() => {
+				titleInput?.focus();
+				titleInput?.select();
+			});
+		}
 
+		wasEditing = editing;
+	}
 	$: if (addingSubtask) {
 		tick().then(() => {
 			subtaskInput?.focus();
@@ -42,6 +50,13 @@
 	}
 
 	const indent = Math.min(depth * (1.1 / 3), 4.4 / 3);
+
+	onMount(() => {
+		isDraftNewTask = task.title.trim().length === 0;
+		if (isDraftNewTask) {
+			editing = true;
+		}
+	});
 
 	const toggleExpand = () => {
 		if (task.children.length === 0) {
@@ -76,16 +91,36 @@
 		taskStore.completeTask(task.id);
 	};
 
-	const commitTitle = () => {
+	const commitTitle = (): boolean => {
 		editing = false;
-		if (draftTitle.trim() && draftTitle.trim() !== task.title.trim()) {
+		const trimmedDraft = draftTitle.trim();
+		const trimmedCurrent = task.title.trim();
+
+		if (!trimmedDraft) {
+			if (isDraftNewTask) {
+				taskStore.deleteTask(task.id);
+			} else {
+				draftTitle = task.title;
+			}
+			return false;
+		}
+
+		if (trimmedDraft !== trimmedCurrent) {
 			taskStore.updateTaskTitle(task.id, draftTitle);
 		}
+
+		initialTitleSnapshot = trimmedDraft;
+		isDraftNewTask = false;
+		return true;
 	};
 
 	const cancelEditing = () => {
+		const shouldRemove = isDraftNewTask && draftTitle.trim() === initialTitleSnapshot;
 		editing = false;
 		draftTitle = task.title;
+		if (shouldRemove) {
+			taskStore.deleteTask(task.id);
+		}
 	};
 
 	const openSubtaskForm = () => {
@@ -107,6 +142,22 @@
 		addingSubtask = false;
 		expanded = true;
 	};
+
+	const handleTitleKeydown = (event: KeyboardEvent) => {
+		if (event.key === 'Enter' && !event.shiftKey && !event.metaKey && !event.ctrlKey && !event.altKey) {
+			event.preventDefault();
+			const committed = commitTitle();
+			if (committed) {
+				taskStore.createSiblingTaskAfter(task.id);
+			}
+			return;
+		}
+
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			cancelEditing();
+		}
+	};
 </script>
 
 <div class="space-y-2" style={`margin-left: ${indent}rem`}>
@@ -127,7 +178,7 @@
 		onArchive={handleArchive}
 		onPeek={handlePeek}
 		onCommitTitle={commitTitle}
-		onCancelEditing={cancelEditing}
+		onTitleKeydown={handleTitleKeydown}
 		onMoveUp={handleMoveUp}
 		onMoveDown={handleMoveDown}
 		onComplete={handleComplete}

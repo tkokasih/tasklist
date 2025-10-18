@@ -35,12 +35,12 @@
 	export let onStartOrPause: () => void = noop;
 	export let onArchive: () => void = noop;
 	export let onPeek: () => void = noop;
-	export let onCommitTitle: () => void = noop;
-	export let onCancelEditing: () => void = noop;
-	export let onMoveUp: () => void = noop;
-	export let onMoveDown: () => void = noop;
-	export let onComplete: () => void = noop;
-	export let onOpenSubtaskForm: () => void = noop;
+export let onCommitTitle: () => void = noop;
+export let onMoveUp: () => void = noop;
+export let onMoveDown: () => void = noop;
+export let onComplete: () => void = noop;
+export let onOpenSubtaskForm: () => void = noop;
+export let onTitleKeydown: (event: KeyboardEvent) => void = noop;
 </script>
 
 <div class={`task-row ${isActive ? 'task-row--active' : ''} ${isPreviewed ? 'task-row--preview' : ''}`}>
@@ -66,15 +66,7 @@
 					bind:value={draftTitle}
 					bind:this={titleInput}
 					on:blur={onCommitTitle}
-					on:keydown={(event) => {
-						if (event.key === 'Enter') {
-							event.preventDefault();
-							onCommitTitle();
-						}
-						if (event.key === 'Escape') {
-							onCancelEditing();
-						}
-					}}
+					on:keydown={onTitleKeydown}
 				/>
 			{:else}
 				<button
