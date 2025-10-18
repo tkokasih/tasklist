@@ -17,7 +17,12 @@ _Last updated: October 18, 2025_
 ## Task Editing Experience
 - [ ] **Inline editable descriptions** — Replace the separate description surface with an inline Markdown editor inside each `TaskItem`, mirroring git commit UX (summary first line, optional body after a blank line).
 - [ ] **Live Markdown rendering** — Provide instant preview for Markdown formatting (bold, lists, code) either via split view toggle or focus/blur transformation.
-- [ ] **Keyboard-first creation** — Introduce shortcuts for `new task`, `new sibling task`, `new subtask`, and quick indentation/outdent to mirror text-editor ergonomics.
+- [ ] **Keyboard-first creation** — Introduce shortcuts for `new task`, `new sibling task`, `new subtask`, and quick indentation/outdent to mirror text-editor ergonomics.  
+  _Design scope (drafted October 18, 2025)_  
+  - Commit-on-create: `Enter` accepts the current title and immediately spawns a focused sibling edit row; `Shift+Enter` nests a new child under the active task and opens it for editing.  
+  - Navigation layer: when no input is focused, arrow keys or `j`/`k` move a “selection” highlight through visible tasks; `Enter` while navigating jumps into edit mode, `Space` toggles expansion.  
+  - Mode affordance: while in navigation, apply a semi-transparent “glass” overlay to the app canvas and elevate the selected row so users see they are in keyboard mode.  
+  - Indent/outdent prep: map `Tab`/`Shift+Tab` (or `]`/`[`) to call new store helpers that reparent the selected task; guard browser focus wrappers by preventing default when navigation mode is active.
 
 ## Additional Density Opportunities
 - [ ] **Hierarchy focus modes** — Offer single-project and single-branch focus toggles that temporarily collapse unrelated branches to reduce vertical sprawl.
