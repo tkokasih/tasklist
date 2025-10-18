@@ -14,9 +14,87 @@ import {
 	updateTaskById
 } from '$lib/core/taskTree';
 import { createDownloadUrl, parseImportedText, revokeDownloadUrl, STORAGE_KEY } from '$lib/core/persistence';
-import type { Task, TaskData } from '$lib/core/taskTypes';
+import type { Task, TaskData, TaskSession } from '$lib/core/taskTypes';
 
 const isoNow = () => new Date().toISOString();
+
+const generateSessionId = () => {
+	if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+		return crypto.randomUUID();
+	}
+	return `sess-${Math.random().toString(36).slice(2, 10)}`;
+};
+
+const normalizeSession = (session: TaskSession | undefined, fallbackTimestamp: string): TaskSession => {
+	if (!session) {
+		return {
+			id: generateSessionId(),
+			startedAt: fallbackTimestamp,
+			endedAt: fallbackTimestamp,
+			durationMs: 0
+		};
+	}
+
+	return {
+		id: session.id ?? generateSessionId(),
+		startedAt: typeof session.startedAt === 'string' ? session.startedAt : fallbackTimestamp,
+		endedAt: typeof session.endedAt === 'string' ? session.endedAt : undefined,
+		durationMs: typeof session.durationMs === 'number' && Number.isFinite(session.durationMs)
+			? Math.max(0, session.durationMs)
+			: 0
+	};
+};
+
+const normalizeTaskSessions = (task: Task): { sessions: TaskSession[]; totalFromSessions: number; total: number } => {
+	const fallbackTimestamp = task.lastStartedAt ?? task.updatedAt ?? task.createdAt ?? isoNow();
+	const rawSessions = Array.isArray((task as Task & { sessions?: TaskSession[] }).sessions)
+		? ((task as Task & { sessions?: TaskSession[] }).sessions as TaskSession[])
+		: [];
+
+	const sessions = rawSessions.map((session) => normalizeSession(session, fallbackTimestamp));
+	let totalFromSessions = sessions.reduce((sum, current) => sum + current.durationMs, 0);
+
+	const total =
+		typeof task.timeSpentMs === 'number' && Number.isFinite(task.timeSpentMs) ? Math.max(0, task.timeSpentMs) : 0;
+
+	if (sessions.length === 0 && total > 0) {
+		const fallbackSession = normalizeSession(
+			{
+				id: generateSessionId(),
+				startedAt: fallbackTimestamp,
+				endedAt: fallbackTimestamp,
+				durationMs: total
+			},
+			fallbackTimestamp
+		);
+
+		return {
+			sessions: [fallbackSession],
+			totalFromSessions: fallbackSession.durationMs,
+			total
+		};
+	}
+
+	return { sessions, totalFromSessions, total };
+};
+
+const normalizeTask = (task: Task): Task => {
+	const children = Array.isArray(task.children) ? task.children.map((child) => normalizeTask(child)) : [];
+	const { sessions, totalFromSessions, total } = normalizeTaskSessions(task);
+
+	return {
+		...task,
+		children,
+		sessions,
+		timeSpentMs: Math.max(total, totalFromSessions)
+	};
+};
+
+const normalizeProjects = (projects: TaskData['projects']): TaskData['projects'] =>
+	projects.map((project) => ({
+		...project,
+		tasks: Array.isArray(project.tasks) ? project.tasks.map((task) => normalizeTask(task)) : []
+	}));
 
 interface TaskStoreState {
 	data: TaskData;
@@ -27,7 +105,7 @@ interface TaskStoreState {
 }
 
 const sanitizeData = (data: TaskData): TaskData => {
-	const projects = data.projects ?? [];
+	const projects = normalizeProjects(data.projects ?? []);
 	const activeProjectId =
 		data.activeProjectId && projects.some((project) => project.id === data.activeProjectId)
 			? data.activeProjectId

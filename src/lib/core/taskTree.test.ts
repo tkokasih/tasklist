@@ -66,6 +66,7 @@ describe('taskTree core helpers', () => {
 		expect(task.title).toBe('New task');
 		expect(task.status).toBe('idle');
 		expect(task.timeSpentMs).toBe(0);
+		expect(task.sessions).toEqual([]);
 		expect(task.children).toEqual([]);
 		expect(task.createdAt).toBe(baseTime);
 		expect(task.updatedAt).toBe(baseTime);
@@ -191,13 +192,38 @@ describe('taskTree core helpers', () => {
 		const projects = [project];
 
 		vi.setSystemTime(new Date(laterTime));
-		const incremented = incrementTaskTime(projects, 'task-root', 5000);
+		const started = setTaskStatus(projects, 'task-root', 'in-progress');
+		const incremented = incrementTaskTime(started.projects, 'task-root', 5000);
 		const taskAfterIncrement = incremented.projects[0].tasks[0];
 		expect(taskAfterIncrement.timeSpentMs).toBe(5000);
 		expect(taskAfterIncrement.lastStartedAt).toBe(laterTime);
+		expect(taskAfterIncrement.sessions).toHaveLength(1);
+		expect(taskAfterIncrement.sessions[0].durationMs).toBe(5000);
+		expect(taskAfterIncrement.sessions[0].endedAt).toBeUndefined();
 
 		const decremented = incrementTaskTime(incremented.projects, 'task-root', -10000);
-		expect(decremented.projects[0].tasks[0].timeSpentMs).toBe(0);
+		const decrementedTask = decremented.projects[0].tasks[0];
+		expect(decrementedTask.timeSpentMs).toBe(0);
+		expect(decrementedTask.sessions[0].durationMs).toBe(0);
+	});
+
+	it('records session lifecycle when task status changes', () => {
+		const project = projectWithTasks();
+		const projects = [project];
+
+		vi.setSystemTime(new Date(baseTime));
+		const started = setTaskStatus(projects, 'task-root', 'in-progress');
+		const startedTask = started.projects[0].tasks[0];
+		expect(startedTask.sessions).toHaveLength(1);
+		expect(startedTask.sessions[0].endedAt).toBeUndefined();
+
+		const incremented = incrementTaskTime(started.projects, 'task-root', 2000);
+		expect(incremented.projects[0].tasks[0].sessions[0].durationMs).toBe(2000);
+
+		vi.setSystemTime(new Date(laterTime));
+		const paused = setTaskStatus(incremented.projects, 'task-root', 'paused');
+		const pausedTask = paused.projects[0].tasks[0];
+		expect(pausedTask.sessions[0].endedAt).toBe(laterTime);
 	});
 
 	it('flattens projects into located task list', () => {

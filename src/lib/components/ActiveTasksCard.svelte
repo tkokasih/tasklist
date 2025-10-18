@@ -6,6 +6,9 @@
 	$: current = $activeTask;
 	$: running = $isTimerRunning;
 	$: recents = $recentTasks;
+	$: currentSession = current?.sessions?.length ? current.sessions[current.sessions.length - 1] : null;
+	$: currentSessionElapsed =
+		currentSession && !currentSession.endedAt ? Math.max(0, currentSession.durationMs) : 0;
 
 	const toggleActive = () => {
 		if (current) {
@@ -26,7 +29,15 @@
 			<p class="text-xs font-semibold uppercase tracking-wide text-blue-600">Current task</p>
 			{#if current}
 				<h4 class="text-lg font-semibold text-slate-900">{current.title}</h4>
-				<p class="text-3xl font-mono font-semibold text-blue-700">{formatDuration(current.timeSpentMs)}</p>
+				<div class="flex flex-col items-center gap-1 text-sm text-slate-600">
+					<p class="text-3xl font-mono font-semibold text-blue-700">{formatDuration(current.timeSpentMs)}</p>
+					<p class="font-medium">Total tracked time</p>
+					{#if running && currentSession}
+						<p class="text-xs uppercase tracking-wide text-blue-600">
+							Current session {formatDuration(currentSessionElapsed)}
+						</p>
+					{/if}
+				</div>
 				<button
 					class={`rounded-full px-6 py-2 text-sm font-semibold shadow transition ${
 						running ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-blue-600 text-white hover:bg-blue-700'

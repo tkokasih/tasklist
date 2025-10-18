@@ -1,4 +1,4 @@
-import type { Project, Task, TaskData, TaskSnapshot, TaskStatus } from './taskTypes';
+import type { Project, Task, TaskData, TaskSession, TaskSnapshot, TaskStatus } from './taskTypes';
 
 export interface TaskUpdateContext {
 	projectId: string;
@@ -37,6 +37,7 @@ export const createTask = (title: string, overrides: Partial<Task> = {}): Task =
 		title,
 		status: 'idle',
 		timeSpentMs: 0,
+		sessions: [],
 		children: [],
 		createdAt: timestamp,
 		updatedAt: timestamp,
@@ -302,16 +303,71 @@ export const addTask = (
 	});
 };
 
+const ensureSessions = (task: Task): TaskSession[] => {
+	if (Array.isArray(task.sessions)) {
+		return task.sessions;
+	}
+	return [];
+};
+
+const startNewSession = (sessions: TaskSession[], startedAt: string): TaskSession[] => [
+	...sessions,
+	{
+		id: generateId(),
+		startedAt,
+		durationMs: 0
+	}
+];
+
+const closeActiveSession = (sessions: TaskSession[], endedAt: string): TaskSession[] => {
+	if (sessions.length === 0) {
+		return sessions;
+	}
+
+	const last = sessions[sessions.length - 1];
+	if (last.endedAt) {
+		return sessions;
+	}
+
+	const next = [...sessions];
+	next[next.length - 1] = {
+		...last,
+		endedAt,
+		durationMs: Math.max(0, last.durationMs)
+	};
+	return next;
+};
+
 export const setTaskStatus = (
 	projects: Project[],
 	taskId: string,
 	status: TaskStatus
 ): { projects: Project[]; changed: boolean } =>
-	updateTaskById(projects, taskId, (task) => ({
-		...task,
-		status,
-		archivedAt: status === 'archived' ? now() : task.archivedAt
-	}));
+	updateTaskById(projects, taskId, (task) => {
+		const timestamp = now();
+		const sessions = ensureSessions(task);
+
+		let nextSessions = sessions;
+		let lastStartedAt = task.lastStartedAt;
+
+		if (status === 'in-progress') {
+			const last = sessions.at(-1);
+			if (!last || last.endedAt) {
+				nextSessions = startNewSession(sessions, timestamp);
+			}
+			lastStartedAt = timestamp;
+		} else if (task.status === 'in-progress') {
+			nextSessions = closeActiveSession(sessions, timestamp);
+		}
+
+		return {
+			...task,
+			status,
+			sessions: nextSessions,
+			archivedAt: status === 'archived' ? timestamp : task.archivedAt,
+			lastStartedAt
+		};
+	});
 
 export const incrementTaskTime = (
 	projects: Project[],
@@ -320,8 +376,43 @@ export const incrementTaskTime = (
 ): { projects: Project[]; changed: boolean } =>
 	updateTaskById(projects, taskId, (task) => ({
 		...task,
-		timeSpentMs: Math.max(0, task.timeSpentMs + deltaMs),
-		lastStartedAt: deltaMs > 0 ? now() : task.lastStartedAt
+		...(() => {
+			const nextTotal = Math.max(0, task.timeSpentMs + deltaMs);
+			const sessions = ensureSessions(task);
+			let nextSessions = sessions.map((session) => ({ ...session }));
+
+			if (deltaMs > 0) {
+				if (nextSessions.length === 0 || nextSessions[nextSessions.length - 1].endedAt) {
+					nextSessions = startNewSession(nextSessions, now());
+				}
+
+				const activeIndex = nextSessions.length - 1;
+				const active = nextSessions[activeIndex];
+				nextSessions[activeIndex] = {
+					...active,
+					durationMs: Math.max(0, active.durationMs + deltaMs)
+				};
+			} else if (deltaMs < 0 && nextSessions.length > 0) {
+				let remaining = Math.abs(deltaMs);
+				for (let index = nextSessions.length - 1; index >= 0 && remaining > 0; index -= 1) {
+					const session = nextSessions[index];
+					if (session.durationMs <= 0) {
+						continue;
+					}
+					const deduction = Math.min(session.durationMs, remaining);
+					nextSessions[index] = {
+						...session,
+						durationMs: session.durationMs - deduction
+					};
+					remaining -= deduction;
+				}
+			}
+
+			return {
+				timeSpentMs: nextTotal,
+				sessions: nextSessions
+			};
+		})()
 	}));
 
 export const flattenTasks = (projects: Project[]): LocatedTask[] => {

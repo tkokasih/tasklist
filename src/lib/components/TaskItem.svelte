@@ -19,6 +19,9 @@ let subtaskInput: HTMLInputElement | null = null;
 	$: state = $taskStore;
 	$: isActive = state.data.activeTaskId === task.id;
 	$: isPreviewed = state.previewTaskId === task.id;
+	$: latestSession = task.sessions?.length ? task.sessions[task.sessions.length - 1] : null;
+	$: activeSessionElapsed =
+		isActive && latestSession && !latestSession.endedAt ? Math.max(0, latestSession.durationMs) : 0;
 
 $: if (!editing) {
 	draftTitle = task.title;
@@ -155,7 +158,18 @@ const statusLabels: Record<Task['status'], string> = {
 							{statusLabels[task.status]}
 						</span>
 
-						<span class="text-sm font-medium text-slate-600">⏱ {formatDuration(task.timeSpentMs)}</span>
+						<div class="flex items-center gap-2 text-sm font-medium text-slate-600">
+							<span class="inline-flex items-center gap-1">
+								<span aria-hidden="true">⏱</span>
+								<span>Total {formatDuration(task.timeSpentMs)}</span>
+							</span>
+							{#if isActive && latestSession}
+								<span class="inline-flex items-center gap-1 text-blue-600">
+									<span aria-hidden="true">•</span>
+									<span>Session {formatDuration(activeSessionElapsed)}</span>
+								</span>
+							{/if}
+						</div>
 					</div>
 
 					{#if showDetails}

@@ -1,11 +1,19 @@
 export type TaskStatus = 'idle' | 'in-progress' | 'paused' | 'completed' | 'archived';
 
+export interface TaskSession {
+	id: string;
+	startedAt: string;
+	endedAt?: string;
+	durationMs: number;
+}
+
 export interface Task {
 	id: string;
 	title: string;
 	description?: string;
 	status: TaskStatus;
 	timeSpentMs: number;
+	sessions: TaskSession[];
 	children: Task[];
 	createdAt: string;
 	updatedAt: string;
