@@ -1,5 +1,4 @@
 import type { Project, Task, TaskData, TaskSession, TaskSnapshot, TaskStatus } from './taskTypes';
-import { CURRENT_DATA_VERSION } from './persistence';
 
 export interface TaskUpdateContext {
 	projectId: string;
@@ -81,8 +80,7 @@ export const createInitialData = (): TaskData => {
 		activeTaskId: null,
 		recentTaskIds: [],
 		snapshots: [],
-		lastSavedAt: now(),
-		dataVersion: CURRENT_DATA_VERSION
+		lastSavedAt: now()
 	};
 };
 

@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-	CURRENT_DATA_VERSION,
 	createDownloadUrl,
 	deserializeData,
 	deserializeSnapshots,
@@ -12,7 +11,6 @@ import {
 import type { TaskData, TaskSnapshot } from './taskTypes';
 
 const sampleData: TaskData = {
-	dataVersion: CURRENT_DATA_VERSION,
 	projects: [
 		{
 			id: 'project-1',

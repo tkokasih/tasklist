@@ -38,7 +38,6 @@ export interface TaskSnapshot {
 }
 
 export interface TaskData {
-	dataVersion: number;
 	projects: Project[];
 	activeProjectId: string | null;
 	activeTaskId: string | null;
