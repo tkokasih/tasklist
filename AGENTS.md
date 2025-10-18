@@ -65,6 +65,7 @@ build/                    Output from the most recent build (ignored during dev)
 - Install dependencies: `npm install`
 - Start dev server: `npm run dev`
 - Type/a11y checks: `npm run check` (invoked post-changes; currently warning-free)
+- Unit tests: `npm run test` (Vitest suite; GitHub Actions runs this before building)
 - Build for production: `npm run build`
 
 ## Notes for Agents
