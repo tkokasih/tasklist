@@ -13,7 +13,14 @@ import {
 	setTaskStatus,
 	updateTaskById
 } from '$lib/core/taskTree';
-import { createDownloadUrl, parseImportedText, revokeDownloadUrl, STORAGE_KEY } from '$lib/core/persistence';
+import {
+	createDownloadUrl,
+	deserializeData,
+	parseImportedText,
+	revokeDownloadUrl,
+	serializeData,
+	STORAGE_KEY
+} from '$lib/core/persistence';
 import type { Task, TaskData, TaskSession } from '$lib/core/taskTypes';
 
 const isoNow = () => new Date().toISOString();
@@ -145,7 +152,7 @@ const loadInitialData = (): TaskData => {
 			return fallback;
 		}
 
-		const parsed = JSON.parse(stored) as TaskData;
+		const parsed = deserializeData(stored);
 		return sanitizeData({ ...fallback, ...parsed });
 	} catch (error) {
 		console.warn('Failed to parse stored task data, resetting to defaults', error);
@@ -159,7 +166,7 @@ const persist = (data: TaskData) => {
 	}
 
 	try {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+		localStorage.setItem(STORAGE_KEY, serializeData(data));
 	} catch (error) {
 		console.error('Failed to persist task data', error);
 	}

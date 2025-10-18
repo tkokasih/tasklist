@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+	CURRENT_DATA_VERSION,
 	createDownloadUrl,
 	deserializeData,
 	deserializeSnapshots,
@@ -43,9 +44,16 @@ describe('persistence helpers', () => {
 
 	it('serializes and deserializes task data', () => {
 		const serialized = serializeData(sampleData);
-		expect(serialized).toContain('"activeProjectId":"project-1"');
+		expect(serialized).toContain(`"version":${CURRENT_DATA_VERSION}`);
+		expect(serialized).toContain('"data"');
 
 		const parsed = deserializeData(serialized);
+		expect(parsed).toEqual(sampleData);
+	});
+
+	it('deserializes legacy payloads without version information', () => {
+		const legacySerialized = JSON.stringify(sampleData);
+		const parsed = deserializeData(legacySerialized);
 		expect(parsed).toEqual(sampleData);
 	});
 
@@ -56,13 +64,16 @@ describe('persistence helpers', () => {
 		expect(parsed).toEqual(sampleSnapshots);
 	});
 
-	it('creates download urls using Blob serialization', () => {
+	it('creates download urls using Blob serialization', async () => {
 		const createSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob://mock');
 
 		const url = createDownloadUrl(sampleData);
 		expect(createSpy).toHaveBeenCalledTimes(1);
 		const [blobArgument] = createSpy.mock.calls[0];
 		expect(blobArgument).toBeInstanceOf(Blob);
+		const blobText = await (blobArgument as Blob).text();
+		const parsed = JSON.parse(blobText) as { version: number };
+		expect(parsed.version).toBe(CURRENT_DATA_VERSION);
 		expect(url).toBe('blob://mock');
 	});
 
@@ -75,6 +86,13 @@ describe('persistence helpers', () => {
 
 	it('parses imported text into task data', () => {
 		const json = JSON.stringify(sampleData);
+
+		const parsed = parseImportedText(json);
+		expect(parsed).toEqual(sampleData);
+	});
+
+	it('parses imported text that includes a version envelope', () => {
+		const json = serializeData(sampleData);
 
 		const parsed = parseImportedText(json);
 		expect(parsed).toEqual(sampleData);
