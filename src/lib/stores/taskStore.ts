@@ -13,7 +13,15 @@ import {
 	setTaskStatus,
 	updateTaskById
 } from '$lib/core/taskTree';
-import { createDownloadUrl, parseImportedText, revokeDownloadUrl, STORAGE_KEY } from '$lib/core/persistence';
+import {
+	CURRENT_DATA_VERSION,
+	createDownloadUrl,
+	getDataVersion,
+	isLegacyDataVersion,
+	parseImportedText,
+	revokeDownloadUrl,
+	STORAGE_KEY
+} from '$lib/core/persistence';
 import type { Task, TaskData, TaskSession } from '$lib/core/taskTypes';
 
 const isoNow = () => new Date().toISOString();
@@ -102,54 +110,71 @@ interface TaskStoreState {
 	timerStartedAt: number | null;
 	lastTickAt: number | null;
 	exportUrl: string | null;
+	persistedDataVersion: number;
 }
 
-const sanitizeData = (data: TaskData): TaskData => {
-	const projects = normalizeProjects(data.projects ?? []);
-	const activeProjectId =
-		data.activeProjectId && projects.some((project) => project.id === data.activeProjectId)
-			? data.activeProjectId
-			: projects[0]?.id ?? null;
+const sanitizeData = (raw: Partial<TaskData>, fallback: TaskData): TaskData => {
+	const sourceProjects =
+		Array.isArray(raw.projects) && raw.projects.length > 0 ? raw.projects : fallback.projects ?? [];
+	const projects = normalizeProjects(sourceProjects);
 
 	const flattened = flattenTasks(projects);
 	const hasTask = (taskId: string | null | undefined) =>
 		Boolean(taskId && flattened.some((item) => item.task.id === taskId));
 
-	const limitedRecent = (data.recentTaskIds ?? [])
+	const preferredProjectId =
+		typeof raw.activeProjectId === 'string' ? raw.activeProjectId : fallback.activeProjectId ?? null;
+	const activeProjectId =
+		preferredProjectId && projects.some((project) => project.id === preferredProjectId)
+			? preferredProjectId
+			: projects[0]?.id ?? null;
+
+	const preferredActiveTaskId =
+		typeof raw.activeTaskId === 'string' ? raw.activeTaskId : fallback.activeTaskId ?? null;
+	const activeTaskId = hasTask(preferredActiveTaskId) ? preferredActiveTaskId : null;
+
+	const recentSource = Array.isArray(raw.recentTaskIds) ? raw.recentTaskIds : fallback.recentTaskIds ?? [];
+	const limitedRecent = recentSource
 		.filter((id, index, array) => array.indexOf(id) === index)
 		.filter((id) => hasTask(id))
 		.slice(0, 5);
 
-	const activeTaskId = hasTask(data.activeTaskId) ? data.activeTaskId : null;
+	const snapshots = Array.isArray(raw.snapshots) ? raw.snapshots : fallback.snapshots ?? [];
+	const lastSavedAt =
+		typeof raw.lastSavedAt === 'string' ? raw.lastSavedAt : fallback.lastSavedAt ?? isoNow();
 
 	return {
-		...data,
+		...raw,
+		dataVersion: getDataVersion(raw),
 		projects,
 		activeProjectId,
 		activeTaskId,
 		recentTaskIds: limitedRecent,
-		snapshots: data.snapshots ?? [],
-		lastSavedAt: data.lastSavedAt ?? isoNow()
-	};
+		snapshots,
+		lastSavedAt
+	} as TaskData;
 };
 
-const loadInitialData = (): TaskData => {
+const loadInitialData = (): { data: TaskData; persistedVersion: number } => {
 	const fallback = createInitialData();
+	const fallbackVersion = fallback.dataVersion;
 	if (!browser) {
-		return fallback;
+		return { data: fallback, persistedVersion: fallbackVersion };
 	}
 
 	try {
 		const stored = localStorage.getItem(STORAGE_KEY);
 		if (!stored) {
-			return fallback;
+			return { data: fallback, persistedVersion: fallbackVersion };
 		}
 
-		const parsed = JSON.parse(stored) as TaskData;
-		return sanitizeData({ ...fallback, ...parsed });
+		const parsed = JSON.parse(stored) as Partial<TaskData>;
+		const persistedVersion = getDataVersion(parsed);
+		const sanitized = sanitizeData(parsed, fallback);
+		return { data: sanitized, persistedVersion };
 	} catch (error) {
 		console.warn('Failed to parse stored task data, resetting to defaults', error);
-		return fallback;
+		return { data: fallback, persistedVersion: fallbackVersion };
 	}
 };
 
@@ -166,17 +191,20 @@ const persist = (data: TaskData) => {
 };
 
 const touchData = (data: TaskData): TaskData => {
-	const next = { ...data, lastSavedAt: isoNow() };
+	const next = { ...data, lastSavedAt: isoNow(), dataVersion: CURRENT_DATA_VERSION };
 	persist(next);
 	return next;
 };
 
+const { data: initialData, persistedVersion } = loadInitialData();
+
 const initialState: TaskStoreState = {
-	data: loadInitialData(),
+	data: initialData,
 	previewTaskId: null,
 	timerStartedAt: null,
 	lastTickAt: null,
-	exportUrl: null
+	exportUrl: null,
+	persistedDataVersion: persistedVersion
 };
 
 const store = writable<TaskStoreState>(initialState);
@@ -220,7 +248,7 @@ const beginTicking = () => {
 				projects
 			});
 
-			return { ...state, data: nextData, lastTickAt: nowMs };
+			return { ...state, data: nextData, lastTickAt: nowMs, persistedDataVersion: CURRENT_DATA_VERSION };
 		});
 	}, 1000);
 };
@@ -233,7 +261,7 @@ const withDataUpdate = (updater: (data: TaskData) => TaskData) => {
 		}
 
 		const touched = touchData(nextData);
-		return { ...state, data: touched };
+		return { ...state, data: touched, persistedDataVersion: CURRENT_DATA_VERSION };
 	});
 };
 
@@ -304,7 +332,8 @@ export const taskStore = {
 				...state,
 				data: nextData,
 				timerStartedAt: clearedTimer ? null : state.timerStartedAt,
-				lastTickAt: clearedTimer ? null : state.lastTickAt
+				lastTickAt: clearedTimer ? null : state.lastTickAt,
+				persistedDataVersion: CURRENT_DATA_VERSION
 			};
 		});
 
@@ -378,7 +407,8 @@ export const taskStore = {
 				recentTaskIds
 			};
 
-			const finalData = changed || activeTaskId !== taskId ? touchData(nextData) : nextData;
+			const touched = changed || activeTaskId !== taskId;
+			const finalData = touched ? touchData(nextData) : nextData;
 
 			shouldStartTimer = true;
 
@@ -386,7 +416,8 @@ export const taskStore = {
 				...state,
 				data: finalData,
 				timerStartedAt: Date.now(),
-				lastTickAt: Date.now()
+				lastTickAt: Date.now(),
+				...(touched ? { persistedDataVersion: CURRENT_DATA_VERSION } : {})
 			};
 		});
 
@@ -416,7 +447,8 @@ export const taskStore = {
 				...state,
 				data: nextData,
 				timerStartedAt: null,
-				lastTickAt: null
+				lastTickAt: null,
+				persistedDataVersion: CURRENT_DATA_VERSION
 			};
 		});
 
@@ -448,7 +480,8 @@ export const taskStore = {
 				...state,
 				data: nextData,
 				timerStartedAt: clearedTimer ? null : state.timerStartedAt,
-				lastTickAt: clearedTimer ? null : state.lastTickAt
+				lastTickAt: clearedTimer ? null : state.lastTickAt,
+				persistedDataVersion: CURRENT_DATA_VERSION
 			};
 		});
 
@@ -480,7 +513,8 @@ export const taskStore = {
 				...state,
 				data: nextData,
 				timerStartedAt: clearedTimer ? null : state.timerStartedAt,
-				lastTickAt: clearedTimer ? null : state.lastTickAt
+				lastTickAt: clearedTimer ? null : state.lastTickAt,
+				persistedDataVersion: CURRENT_DATA_VERSION
 			};
 		});
 
@@ -584,8 +618,8 @@ export const taskStore = {
 		this.importData(parseImportedText(text));
 	},
 
-	importData(data: TaskData) {
-		withDataUpdate(() => sanitizeData(data));
+	importData(data: Partial<TaskData>) {
+		withDataUpdate(() => sanitizeData(data, createInitialData()));
 		stopTicking();
 		store.update((state) => ({ ...state, timerStartedAt: null, lastTickAt: null }));
 	},
@@ -597,7 +631,8 @@ export const taskStore = {
 			previewTaskId: null,
 			timerStartedAt: null,
 			lastTickAt: null,
-			exportUrl: null
+			exportUrl: null,
+			persistedDataVersion: CURRENT_DATA_VERSION
 		});
 		stopTicking();
 	}
@@ -641,3 +676,11 @@ export const recentTasks = derived(taskStore, ($state) => {
 
 	return $state.data.recentTaskIds.map((id) => map.get(id)).filter((task): task is Task => Boolean(task));
 });
+
+export const dataVersion = derived(taskStore, ($state) => $state.data.dataVersion);
+
+export const persistedDataVersion = derived(taskStore, ($state) => $state.persistedDataVersion);
+
+export const isPersistedDataLegacy = derived(taskStore, ($state) =>
+	isLegacyDataVersion($state.persistedDataVersion)
+);
