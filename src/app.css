@@ -15,17 +15,17 @@
 	}
 }
 
-@layer components {
-	.task-row {
-		@apply flex items-center gap-3 rounded-md border border-slate-200 bg-white/80 px-3 py-2 text-sm shadow-sm transition;
+	@layer components {
+		.task-row {
+		@apply flex items-center gap-3 rounded-md bg-white/80 px-3 py-2 text-sm transition;
 	}
 
 	.task-row--active {
-		@apply border-blue-400 shadow-md ring-1 ring-blue-200;
+		@apply border border-blue-400 shadow-md ring-1 ring-blue-200;
 	}
 
 	.task-row--preview {
-		@apply ring-1 ring-amber-200;
+		@apply border border-amber-200 ring-1 ring-amber-200;
 	}
 
 	.task-row__toggle {
@@ -102,6 +102,11 @@
 
 	.task-row__action--success {
 		@apply border-emerald-500 text-emerald-600 hover:bg-emerald-50;
+	}
+
+	.task-row:hover:not(.task-row--active):not(.task-row--preview),
+	.task-row:focus-within:not(.task-row--active):not(.task-row--preview) {
+		@apply bg-blue-50/80;
 	}
 
 	.task-detail-panel {

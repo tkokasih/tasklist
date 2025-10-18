@@ -200,7 +200,7 @@
 	};
 </script>
 
-<div class="space-y-2" style={`margin-left: ${indent}rem`}>
+<div class="space-y-1" style={`margin-left: ${indent}rem`}>
 	<TaskRowSummary
 		{task}
 		{expanded}
@@ -274,7 +274,7 @@
 	{/if}
 
 	{#if expanded && task.children.length > 0}
-		<div class="space-y-2 border-l border-slate-200 pl-5">
+		<div class="space-y-1 border-l border-slate-200 pl-5">
 			{#each task.children as child (child.id)}
 				<svelte:self task={child} depth={depth + 1} />
 			{/each}
