@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { activeProject, ProjectHeader, SidePanel, TaskTree } from '$lib';
+	import { activeProject, ProjectHeader, SearchFilterRibbon, SidePanel, TaskTree } from '$lib';
 
 	$: project = $activeProject;
 </script>
@@ -8,6 +8,7 @@
 	<div class="mx-auto flex w-full max-w-[120rem] flex-col gap-6 px-6 lg:flex-row">
 		<div class="flex-1 space-y-6">
 			<ProjectHeader />
+			<SearchFilterRibbon />
 
 			<section class="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-lg shadow-slate-200/70">
 				<header class="mb-6 flex flex-col gap-2 border-b border-slate-200 pb-4">
