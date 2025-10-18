@@ -74,3 +74,4 @@ build/                    Output from the most recent build (ignored during dev)
 - Timer interval lives in store module scope; ensure `stopTicking` called when cleaning up (e.g., snapshot restore, archive).
 - When extending UI, prefer composing from existing core functions or extending them in `core/` to keep presentation lean.
 - For every new task, craft and share a big-picture design plan before touching implementation details. When it fits within reasonable token cost and the task warrants comparison, propose up to two viable alternative solutions with concise pros/cons and call out the recommended approach before proceeding.
+- Use the `notes/` directory for persistent planning artifacts (e.g., `notes/info-dense.md` tracks the information density roadmap); update relevant notes when starting or landing major work so future agents remain aligned.
