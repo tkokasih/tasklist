@@ -1,27 +1,31 @@
-<section class="flex flex-col items-center gap-6 px-6 py-20 text-center sm:py-24">
-	<h1 class="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">Tasklist</h1>
-	<p class="max-w-2xl text-lg text-slate-600 sm:text-xl">
-		Build a modern task manager powered by SvelteKit and deployed with GitHub Pages.
-	</p>
-	<a
-		class="inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-blue-500 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
-		href="https://github.com/tkokasih/tasklist"
-	>
-		View the repo
-	</a>
-</section>
+<script lang="ts">
+	import { activeProject, ProjectHeader, SidePanel, TaskTree } from '$lib';
 
-<section class="mx-auto w-full max-w-4xl rounded-3xl bg-white/70 px-6 py-12 backdrop-blur shadow-lg shadow-slate-200/60 sm:px-10">
-	<h2 class="mb-8 text-center text-2xl font-semibold text-slate-900">Why this stack?</h2>
-	<ul class="grid gap-4 text-left sm:grid-cols-3">
-		<li class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm shadow-slate-200/40">
-			SvelteKit for fast, composable user interfaces.
-		</li>
-		<li class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm shadow-slate-200/40">
-			Static adapter for a zero-server SPA.
-		</li>
-		<li class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm shadow-slate-200/40">
-			Continuous deployment with GitHub Actions.
-		</li>
-	</ul>
-</section>
+	$: project = $activeProject;
+</script>
+
+<main class="min-h-screen bg-slate-100 py-12">
+	<div class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 lg:flex-row">
+		<div class="flex-1 space-y-6">
+			<ProjectHeader />
+
+			<section class="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-lg shadow-slate-200/70">
+				<header class="mb-6 flex flex-col gap-2 border-b border-slate-200 pb-4">
+					<h2 class="text-2xl font-semibold text-slate-900">
+						{project ? project.title : 'Your project'}
+					</h2>
+					<p class="text-sm text-slate-500">
+						Organize work with infinitely nested tasks. Use the play button to track time, archive items you no longer
+						need, and peek into details when reviewing progress.
+					</p>
+				</header>
+
+				<TaskTree {project} />
+			</section>
+		</div>
+
+		<div class="w-full lg:max-w-sm">
+			<SidePanel />
+		</div>
+	</div>
+</main>
