@@ -5,7 +5,7 @@
 </script>
 
 <main class="min-h-screen bg-slate-100 py-12">
-	<div class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 lg:flex-row">
+	<div class="mx-auto flex w-full max-w-[120rem] flex-col gap-6 px-6 lg:flex-row">
 		<div class="flex-1 space-y-6">
 			<ProjectHeader />
 
