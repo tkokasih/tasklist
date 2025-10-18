@@ -32,6 +32,7 @@ _Last updated: October 18, 2025_
 - Refactor shared spacing tokens in `app.css` / Tailwind config to support density presets.
 - Update store interactions to ensure inline editing and keyboard shortcuts do not conflict with existing timer controls.
 - Add integration tests and accessibility checks (`npm run check`) focused on keyboard navigation and ARIA expectations for collapsible regions.
+- Defer mobile and narrow-view optimizations to `notes/mobile-display.md` so desktop density can iterate independently.
 
 ## Tracking & Next Steps
 - Maintain this note as the single source of truth for information-density workstreams.
