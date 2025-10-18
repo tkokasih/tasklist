@@ -73,3 +73,4 @@ build/                    Output from the most recent build (ignored during dev)
 - LocalStorage interactions guarded by SvelteKit `browser` flag to avoid SSR issues.
 - Timer interval lives in store module scope; ensure `stopTicking` called when cleaning up (e.g., snapshot restore, archive).
 - When extending UI, prefer composing from existing core functions or extending them in `core/` to keep presentation lean.
+- For every new task, craft and share a big-picture design plan before touching implementation details. When it fits within reasonable token cost and the task warrants comparison, propose up to two viable alternative solutions with concise pros/cons and call out the recommended approach before proceeding.
