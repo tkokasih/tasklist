@@ -11,7 +11,7 @@
 	let expanded = true;
 	let editing = false;
 	let draftTitle = task.title;
-	let showDetails = false;
+let showDetails = false;
 	let addingSubtask = false;
 	let subtaskTitle = '';
 	let titleInput: HTMLInputElement | null = null;
@@ -89,15 +89,9 @@
 		taskStore.archiveTask(task.id);
 	};
 
-	const handlePeek = () => {
-		const nextShow = !showDetails;
-		showDetails = nextShow;
-		taskStore.selectPreview(nextShow ? task.id : null);
-	};
-
-	const handleMoveUp = () => {
-		taskStore.moveTaskUp(task.id);
-	};
+const handleMoveUp = () => {
+	taskStore.moveTaskUp(task.id);
+};
 
 	const handleMoveDown = () => {
 		taskStore.moveTaskDown(task.id);
@@ -210,13 +204,11 @@
 		bind:titleInput
 		{isActive}
 		{isPreviewed}
-		{showDetails}
 		{latestSession}
 		{activeSessionElapsed}
 		onToggleExpand={toggleExpand}
 		onStartOrPause={handleStartOrPause}
 		onArchive={handleArchive}
-		onPeek={handlePeek}
 		onCommitTitle={commitTitle}
 		onTitleKeydown={handleTitleKeydown}
 		onMoveUp={handleMoveUp}

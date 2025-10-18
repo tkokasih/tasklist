@@ -27,14 +27,12 @@
 	export let draftTitle = '';
 	export let titleInput: HTMLInputElement | null = null;
 	export let isActive = false;
-	export let isPreviewed = false;
-	export let showDetails = false;
-	export let latestSession: TaskSession | null = null;
-	export let activeSessionElapsed = 0;
-	export let onToggleExpand: () => void = noop;
-	export let onStartOrPause: () => void = noop;
-	export let onArchive: () => void = noop;
-	export let onPeek: () => void = noop;
+export let isPreviewed = false;
+export let latestSession: TaskSession | null = null;
+export let activeSessionElapsed = 0;
+export let onToggleExpand: () => void = noop;
+export let onStartOrPause: () => void = noop;
+export let onArchive: () => void = noop;
 export let onCommitTitle: () => void = noop;
 export let onMoveUp: () => void = noop;
 export let onMoveDown: () => void = noop;
@@ -133,16 +131,6 @@ export let onTitleKeydown: (event: KeyboardEvent) => void = noop;
 				<span aria-hidden="true">＋</span>
 				<span class="sr-only sm:hidden">Add sub-task</span>
 				<span class="hidden sm:inline">Subtask</span>
-			</button>
-
-			<button
-				class={`task-row__action task-row__action--warning ${showDetails ? 'is-active' : ''}`}
-				type="button"
-				on:click={onPeek}
-			>
-				<span aria-hidden="true">👁</span>
-				<span class="sr-only sm:hidden">Toggle details</span>
-				<span class="hidden sm:inline">{showDetails ? 'Hide' : 'Peek'}</span>
 			</button>
 
 			<button
