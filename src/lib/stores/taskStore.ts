@@ -678,14 +678,15 @@ export const taskStore = {
 			revokeDownloadUrl(state.exportUrl);
 		}
 
-		if (!browser) {
-			return null;
-		}
+	if (!browser) {
+		return null;
+	}
 
-		const url = createDownloadUrl(state.data);
-		store.update((current) => ({ ...current, exportUrl: url }));
-		return url;
-	},
+	const exportPayload: TaskData = { ...state.data, snapshots: [] };
+	const url = createDownloadUrl(exportPayload);
+	store.update((current) => ({ ...current, exportUrl: url }));
+	return url;
+},
 
 	clearExportUrl() {
 		const state = get(store);
