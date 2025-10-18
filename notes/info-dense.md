@@ -9,8 +9,8 @@ _Last updated: October 18, 2025_
 - Treat timer context as always visible; no layout mode should hide active task feedback.
 
 ## Layout & Structure Initiatives
-- [ ] **Responsive task workspace width** — Allow the task column to expand on large screens while capping max width and using generous inner padding so text remains readable.
-- [ ] **Compact task rows** — Rebuild `TaskItem` spacing so the summary line fits on one row by default, with secondary metadata (status, assignee, timers) tucked into inline badges or hoverable affordances.
+- [x] **Responsive task workspace width** — Allow the task column to expand on large screens while capping max width and using generous inner padding so text remains readable. _Shipped October 18, 2025 — widened `+page.svelte` container to max-w-[120rem]._
+- [x] **Compact task rows** — Rebuild `TaskItem` spacing so the summary line fits on one row by default, with secondary metadata (status, assignee, timers) tucked into inline badges or hoverable affordances. _Shipped October 18, 2025 — introduced `TaskRowSummary` and density utilities._
 - [ ] **Sticky side utilities** — Convert `SidePanel` into a sticky column that remains anchored on scroll, ensuring data snapshots and active controls stay visible even at deep scroll positions.
 - [ ] **Collapsible sidebar with floating timer** — Add a slide-out affordance to collapse the side panel; when collapsed, show a minimal floating timer popover that exposes start/pause, elapsed time, and quick re-open.
 
