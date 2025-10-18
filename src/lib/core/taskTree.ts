@@ -387,6 +387,97 @@ export const removeTaskById = (
 	return { projects: nextProjects, changed: true };
 };
 
+export const indentTask = (
+	projects: Project[],
+	taskId: string
+): { projects: Project[]; changed: boolean } => {
+	const located = locateTask(projects, taskId);
+	if (!located) {
+		return { projects, changed: false };
+	}
+
+	const { project, parentIds, index } = located;
+	if (index <= 0) {
+		return { projects, changed: false };
+	}
+
+	const nextProjects = cloneProjects(projects);
+	const projectRef = nextProjects.find((candidate) => candidate.id === project.id);
+	if (!projectRef) {
+		return { projects, changed: false };
+	}
+
+	const container = findTaskContainer(projectRef, parentIds);
+	if (!container) {
+		return { projects, changed: false };
+	}
+
+	const previousSibling = container[index - 1];
+	const movingTask = container[index];
+	if (!previousSibling || !movingTask) {
+		return { projects, changed: false };
+	}
+
+	const timestamp = now();
+	const updatedTask = { ...movingTask, updatedAt: timestamp };
+	container.splice(index, 1);
+	previousSibling.children = [...previousSibling.children, updatedTask];
+	previousSibling.updatedAt = timestamp;
+
+	touchAncestors(projectRef, parentIds, timestamp);
+	touchAncestors(projectRef, [...parentIds, previousSibling.id], timestamp);
+
+	return { projects: nextProjects, changed: true };
+};
+
+export const outdentTask = (
+	projects: Project[],
+	taskId: string
+): { projects: Project[]; changed: boolean } => {
+	const located = locateTask(projects, taskId);
+	if (!located) {
+		return { projects, changed: false };
+	}
+
+	const { project, parentIds, index } = located;
+	if (parentIds.length === 0) {
+		return { projects, changed: false };
+	}
+
+	const nextProjects = cloneProjects(projects);
+	const projectRef = nextProjects.find((candidate) => candidate.id === project.id);
+	if (!projectRef) {
+		return { projects, changed: false };
+	}
+
+	const parentId = parentIds[parentIds.length - 1];
+	const parentContainer = findTaskContainer(projectRef, parentIds.slice(0, -1));
+	const childContainer = findTaskContainer(projectRef, parentIds);
+	if (!parentContainer || !childContainer) {
+		return { projects, changed: false };
+	}
+
+	const parentIndex = parentContainer.findIndex((task) => task.id === parentId);
+	if (parentIndex === -1) {
+		return { projects, changed: false };
+	}
+
+	const movingTask = childContainer[index];
+	if (!movingTask) {
+		return { projects, changed: false };
+	}
+
+	const timestamp = now();
+	childContainer.splice(index, 1);
+	const updatedTask = { ...movingTask, updatedAt: timestamp };
+	parentContainer.splice(parentIndex + 1, 0, updatedTask);
+
+	touchAncestors(projectRef, parentIds, timestamp);
+	touchAncestors(projectRef, parentIds.slice(0, -1), timestamp);
+
+	return { projects: nextProjects, changed: true };
+};
+
 const ensureSessions = (task: Task): TaskSession[] => {
 	if (Array.isArray(task.sessions)) {
 		return task.sessions;

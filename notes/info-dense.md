@@ -23,7 +23,8 @@ _Last updated: October 18, 2025_
     _Shipped October 18, 2025 — Enter commits an inline edit and creates a new sibling draft; Escape cancels edits and removes untouched draft tasks. Shift+Enter reserved for multiline descriptions._
   - [ ] Navigation layer: when no input is focused, arrow keys or `j`/`k` move a “selection” highlight through visible tasks; `Enter` while navigating jumps into edit mode, `Space` toggles expansion.  
   - [ ] Mode affordance: while in navigation, apply a semi-transparent “glass” overlay to the app canvas and elevate the selected row so users see they are in keyboard mode.  
-  - [ ] Indent/outdent prep: map `Tab`/`Shift+Tab` (or `]`/`[`) to call new store helpers that reparent the selected task; guard browser focus wrappers by preventing default when navigation mode is active.
+  - [x] Indent/outdent: map `Tab`/`Shift+Tab` (or `]`/`[`) to call new store helpers that reparent the selected task; guard browser focus wrappers by preventing default when navigation mode is active. _Shipped October 18, 2025 — added task tree reparent helpers with Tab/Shift+Tab shortcuts that keep the editor focused._
+  - [ ] Cursor continuity: after indent/outdent reuse the prior caret position instead of refocusing with full selection, so typing resumes exactly where the user left off.
 
 ## Additional Density Opportunities
 - [ ] **Hierarchy focus modes** — Offer single-project and single-branch focus toggles that temporarily collapse unrelated branches to reduce vertical sprawl.

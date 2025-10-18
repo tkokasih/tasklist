@@ -11,6 +11,8 @@ import {
 	incrementTaskTime,
 	locateTask,
 	moveTask,
+	indentTask as indentTaskInTree,
+	outdentTask as outdentTaskInTree,
 	removeTaskById,
 	setTaskStatus,
 	updateTaskById
@@ -111,6 +113,7 @@ interface TaskStoreState {
 	timerStartedAt: number | null;
 	lastTickAt: number | null;
 	exportUrl: string | null;
+	focusedEditorTaskId: string | null;
 }
 
 const sanitizeData = (data: TaskData): TaskData => {
@@ -185,7 +188,8 @@ const initialState: TaskStoreState = {
 	previewTaskId: null,
 	timerStartedAt: null,
 	lastTickAt: null,
-	exportUrl: null
+	exportUrl: null,
+	focusedEditorTaskId: null
 };
 
 const store = writable<TaskStoreState>(initialState);
@@ -383,7 +387,8 @@ export const taskStore = {
 				data: nextData,
 				previewTaskId: state.previewTaskId === taskId ? null : state.previewTaskId,
 				timerStartedAt: wasActive ? null : state.timerStartedAt,
-				lastTickAt: wasActive ? null : state.lastTickAt
+				lastTickAt: wasActive ? null : state.lastTickAt,
+				focusedEditorTaskId: state.focusedEditorTaskId === taskId ? null : state.focusedEditorTaskId
 			};
 		});
 
@@ -579,6 +584,50 @@ export const taskStore = {
 		});
 	},
 
+	indentTask(taskId: string): boolean {
+		let moved = false;
+		withDataUpdate((data) => {
+			const result = indentTaskInTree(data.projects, taskId);
+			if (!result.changed) {
+				return data;
+			}
+
+			moved = true;
+			return { ...data, projects: result.projects };
+		});
+		return moved;
+	},
+
+	outdentTask(taskId: string): boolean {
+		let moved = false;
+		withDataUpdate((data) => {
+			const result = outdentTaskInTree(data.projects, taskId);
+			if (!result.changed) {
+				return data;
+			}
+
+			moved = true;
+			return { ...data, projects: result.projects };
+		});
+		return moved;
+	},
+
+	focusTaskEditor(taskId: string) {
+		store.update((state) => ({ ...state, focusedEditorTaskId: taskId }));
+	},
+
+	clearFocusedEditor(taskId?: string) {
+		store.update((state) => {
+			if (taskId && state.focusedEditorTaskId !== taskId) {
+				return state;
+			}
+			if (!state.focusedEditorTaskId) {
+				return state;
+			}
+			return { ...state, focusedEditorTaskId: null };
+		});
+	},
+
 	selectPreview(taskId: string | null) {
 		store.update((state) => ({ ...state, previewTaskId: taskId }));
 	},
@@ -665,7 +714,8 @@ export const taskStore = {
 			previewTaskId: null,
 			timerStartedAt: null,
 			lastTickAt: null,
-			exportUrl: null
+			exportUrl: null,
+			focusedEditorTaskId: null
 		});
 		stopTicking();
 	}

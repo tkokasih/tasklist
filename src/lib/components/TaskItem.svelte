@@ -19,6 +19,7 @@
 	let isDraftNewTask = false;
 	let wasEditing = false;
 	let initialTitleSnapshot = task.title.trim();
+	let pendingReapplyFocus = false;
 
 	$: state = $taskStore;
 	$: isActive = state.data.activeTaskId === task.id;
@@ -47,6 +48,21 @@
 		tick().then(() => {
 			subtaskInput?.focus();
 		});
+	}
+
+	$: if (state.focusedEditorTaskId === task.id) {
+		if (!editing) {
+			editing = true;
+		}
+		if (!pendingReapplyFocus) {
+			pendingReapplyFocus = true;
+			tick().then(() => {
+				titleInput?.focus();
+				titleInput?.select();
+				taskStore.clearFocusedEditor(task.id);
+				pendingReapplyFocus = false;
+			});
+		}
 	}
 
 	const indent = Math.min(depth * (1.1 / 3), 4.4 / 3);
@@ -150,6 +166,30 @@
 			if (committed) {
 				taskStore.createSiblingTaskAfter(task.id);
 			}
+			return;
+		}
+
+		if (event.key === 'Tab' && !event.metaKey && !event.ctrlKey && !event.altKey) {
+			event.preventDefault();
+			const wasEditing = editing;
+			const committed = commitTitle();
+			if (!committed) {
+				if (wasEditing) {
+					editing = true;
+				}
+				return;
+			}
+
+			if (event.shiftKey) {
+				taskStore.outdentTask(task.id);
+			} else {
+				taskStore.indentTask(task.id);
+			}
+
+			if (wasEditing) {
+				taskStore.focusTaskEditor(task.id);
+			}
+
 			return;
 		}
 
