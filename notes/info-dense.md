@@ -11,7 +11,7 @@ _Last updated: October 18, 2025_
 ## Layout & Structure Initiatives
 - [x] **Responsive task workspace width** — Allow the task column to expand on large screens while capping max width and using generous inner padding so text remains readable. _Shipped October 18, 2025 — widened `+page.svelte` container to max-w-[120rem]._
 - [x] **Compact task rows** — Rebuild `TaskItem` spacing so the summary line fits on one row by default, with secondary metadata (status, assignee, timers) tucked into inline badges or hoverable affordances. _Shipped October 18, 2025 — introduced `TaskRowSummary` and density utilities._
-- [ ] **Sticky side utilities** — Convert `SidePanel` into a sticky column that remains anchored on scroll, ensuring data snapshots and active controls stay visible even at deep scroll positions.
+- [x] **Sticky side utilities** — Convert `SidePanel` into a fixed column that remains anchored on scroll, ensuring data snapshots and active controls stay visible even at deep scroll positions. _Shipped October 19, 2025 — reserved right-edge space on large screens, fixed the sidebar, and added an internal scroll container with dedicated styling so utility cards stay pinned yet independently scrollable._
 - [ ] **Collapsible sidebar with floating timer** — Add a slide-out affordance to collapse the side panel; when collapsed, show a minimal floating timer popover that exposes start/pause, elapsed time, and quick re-open.
 
 ## Task Editing Experience
@@ -30,7 +30,7 @@ _Last updated: October 18, 2025_
 - [ ] **Hierarchy focus modes** — Offer single-project and single-branch focus toggles that temporarily collapse unrelated branches to reduce vertical sprawl.
 - [ ] **Adaptive metadata display** — Surface due dates, tags, or owners as icons with tooltips; expand to full text on hover or keyboard focus.
 - [ ] **Batch actions toolbar** — Provide a contextual toolbar that appears when multiple tasks are selected to reduce repeated trips to the sidebar.
-- [x] **Search & filter ribbon** — Shipped October 18, 2025 — added a persistent top-of-workspace ribbon scaffold with search and filter placeholders. _Update October 18, 2025:_ Status chips now drive live filtering via the Task Store with semantic presets (All, Active, Completed, Archived). _Next:_ connect the search input to task-tree querying, activate tag/time selectors, and surface dynamic result counts.
+- [x] **Search & filter ribbon** — Shipped October 18, 2025 — added a persistent top-of-workspace ribbon scaffold with search and filter placeholders. _Update October 18, 2025:_ Status selection now ships as preset chip group (All / Active / Completed / Archived) mapped to semantic filter combinations. _Next:_ connect the search input to task-tree querying, activate tag/time selectors, and surface dynamic result counts.
 - [ ] **Density presets** — Ship “Comfortable / Compact / Ultra” spacing presets to let users control vertical rhythm without manual overrides.
 - [ ] **Accessible color cues** — Audit contrast on densified UI to ensure WCAG AA compliance even after shrinking padding and font sizes.
 - [ ] **Performance guardrails** — Validate that denser renders do not degrade scroll performance; instrument virtualization if needed as tasks scale.

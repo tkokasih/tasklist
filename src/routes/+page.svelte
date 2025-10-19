@@ -11,8 +11,8 @@
 </script>
 
 <main class="min-h-screen bg-slate-100 py-12">
-	<div class="mx-auto flex w-full max-w-[120rem] flex-col gap-6 px-6 lg:flex-row">
-		<div class="flex-1 space-y-6">
+	<div class="relative mx-auto w-full max-w-[120rem] px-6">
+		<div class="flex flex-col gap-6 lg:pr-[26rem]">
 			<ProjectHeader />
 			<SearchFilterRibbon />
 
@@ -29,10 +29,20 @@
 
 				<TaskTree project={visibleProject} {emptyMessage} />
 			</section>
+
+			<div class="lg:hidden">
+				<SidePanel />
+			</div>
 		</div>
 
-		<div class="w-full lg:max-w-sm">
-			<SidePanel />
+		<div class="pointer-events-none hidden lg:block">
+			<div class="pointer-events-auto fixed right-6 top-24 w-[24rem]">
+				<div class="side-panel-shell rounded-3xl border border-slate-200 bg-white/90 shadow-xl shadow-slate-400/10 ring-1 ring-white/70">
+					<div class="side-panel-scroll max-h-[calc(100vh-6rem)] overflow-y-auto py-6 pl-6 pr-4">
+						<SidePanel />
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
 </main>
