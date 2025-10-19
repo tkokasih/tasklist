@@ -30,7 +30,7 @@ _Last updated: October 18, 2025_
 - [ ] **Hierarchy focus modes** — Offer single-project and single-branch focus toggles that temporarily collapse unrelated branches to reduce vertical sprawl.
 - [ ] **Adaptive metadata display** — Surface due dates, tags, or owners as icons with tooltips; expand to full text on hover or keyboard focus.
 - [ ] **Batch actions toolbar** — Provide a contextual toolbar that appears when multiple tasks are selected to reduce repeated trips to the sidebar.
-- [x] **Search & filter ribbon** — Shipped October 18, 2025 — added a persistent top-of-workspace ribbon scaffold with search and filter placeholders. _Next:_ connect search to task tree query, wire status/tag/time chips to store filters, and surface result counts dynamically.
+- [x] **Search & filter ribbon** — Shipped October 18, 2025 — added a persistent top-of-workspace ribbon scaffold with search and filter placeholders. _Update October 18, 2025:_ Status chips now drive live filtering via the Task Store with semantic presets (All, Active, Completed, Archived). _Next:_ connect the search input to task-tree querying, activate tag/time selectors, and surface dynamic result counts.
 - [ ] **Density presets** — Ship “Comfortable / Compact / Ultra” spacing presets to let users control vertical rhythm without manual overrides.
 - [ ] **Accessible color cues** — Audit contrast on densified UI to ensure WCAG AA compliance even after shrinking padding and font sizes.
 - [ ] **Performance guardrails** — Validate that denser renders do not degrade scroll performance; instrument virtualization if needed as tasks scale.

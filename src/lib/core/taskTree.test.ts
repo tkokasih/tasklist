@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	addTask,
 	applySnapshot,
+	DEFAULT_STATUS_FILTERS,
 	createInitialData,
 	createProject,
 	createSnapshot,
@@ -93,6 +94,7 @@ describe('taskTree core helpers', () => {
 		expect(Array.isArray(data.snapshots)).toBe(true);
 		expect(data.recentTaskIds).toEqual([]);
 		expect(data.lastSavedAt).toBe(baseTime);
+		expect(data.filters.statuses).toEqual(DEFAULT_STATUS_FILTERS);
 	});
 
 	it('updates a targeted task and project timestamps via updateTaskById', () => {

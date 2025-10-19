@@ -57,6 +57,8 @@ export const createProject = (title: string, overrides: Partial<Project> = {}): 
 	};
 };
 
+export const DEFAULT_STATUS_FILTERS: TaskStatus[] = ['idle', 'in-progress', 'paused'];
+
 export const createInitialData = (): TaskData => {
 	const project = createProject('Project Alpha', {
 		tasks: [
@@ -80,7 +82,10 @@ export const createInitialData = (): TaskData => {
 		activeTaskId: null,
 		recentTaskIds: [],
 		snapshots: [],
-		lastSavedAt: now()
+		lastSavedAt: now(),
+		filters: {
+			statuses: DEFAULT_STATUS_FILTERS
+		}
 	};
 };
 

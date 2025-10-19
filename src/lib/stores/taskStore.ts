@@ -15,7 +15,8 @@ import {
 	outdentTask as outdentTaskInTree,
 	removeTaskById,
 	setTaskStatus,
-	updateTaskById
+	updateTaskById,
+	DEFAULT_STATUS_FILTERS
 } from '$lib/core/taskTree';
 import {
 	createDownloadUrl,
@@ -25,9 +26,25 @@ import {
 	serializeData,
 	STORAGE_KEY
 } from '$lib/core/persistence';
-import type { Task, TaskData, TaskSession } from '$lib/core/taskTypes';
+import type { Project, Task, TaskData, TaskSession, TaskStatus } from '$lib/core/taskTypes';
 
 const isoNow = () => new Date().toISOString();
+
+const STATUS_ORDER: TaskStatus[] = ['idle', 'in-progress', 'paused', 'completed', 'archived'];
+const STATUS_SET = new Set<TaskStatus>(STATUS_ORDER);
+export const ALL_STATUS_VALUES: ReadonlyArray<TaskStatus> = [...STATUS_ORDER];
+const cloneDefaultStatusSelection = () => [...DEFAULT_STATUS_FILTERS];
+const orderStatuses = (statuses: Iterable<TaskStatus>): TaskStatus[] => {
+	const selection = new Set<TaskStatus>();
+	for (const status of statuses) {
+		if (STATUS_SET.has(status)) {
+			selection.add(status);
+		}
+	}
+	return STATUS_ORDER.filter((status) => selection.has(status));
+};
+const statusesEqual = (a: TaskStatus[], b: TaskStatus[]) =>
+	a.length === b.length && a.every((status, index) => status === b[index]);
 
 const generateSessionId = () => {
 	if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -134,6 +151,15 @@ const sanitizeData = (data: TaskData): TaskData => {
 
 	const activeTaskId = hasTask(data.activeTaskId) ? data.activeTaskId : null;
 
+	const rawStatuses = Array.isArray(data.filters?.statuses) ? (data.filters.statuses as TaskStatus[]) : undefined;
+	const normalizedStatuses = (() => {
+		if (!rawStatuses) {
+			return cloneDefaultStatusSelection();
+		}
+		const ordered = orderStatuses(rawStatuses);
+		return ordered.length > 0 ? ordered : cloneDefaultStatusSelection();
+	})();
+
 	return {
 		...data,
 		projects,
@@ -141,7 +167,10 @@ const sanitizeData = (data: TaskData): TaskData => {
 		activeTaskId,
 		recentTaskIds: limitedRecent,
 		snapshots: data.snapshots ?? [],
-		lastSavedAt: data.lastSavedAt ?? isoNow()
+		lastSavedAt: data.lastSavedAt ?? isoNow(),
+		filters: {
+			statuses: normalizedStatuses
+		}
 	};
 };
 
@@ -248,6 +277,52 @@ const withDataUpdate = (updater: (data: TaskData) => TaskData) => {
 		const touched = touchData(nextData);
 		return { ...state, data: touched };
 	});
+};
+
+const filterTasksByStatus = (
+	tasks: Task[],
+	allowed: Set<TaskStatus>
+): { tasks: Task[]; changed: boolean } => {
+	if (tasks.length === 0) {
+		return { tasks, changed: false };
+	}
+
+	let changed = false;
+	const next: Task[] = [];
+
+	for (const task of tasks) {
+		const { tasks: filteredChildren, changed: childrenChanged } = filterTasksByStatus(task.children, allowed);
+		const includeSelf = allowed.has(task.status);
+
+		if (!includeSelf && filteredChildren.length === 0) {
+			changed = true;
+			continue;
+		}
+
+		if (!includeSelf) {
+			changed = true;
+			next.push({ ...task, children: filteredChildren });
+			continue;
+		}
+
+		if (childrenChanged) {
+			changed = true;
+			next.push({ ...task, children: filteredChildren });
+			continue;
+		}
+
+		next.push(task);
+	}
+
+	if (!changed && next.length !== tasks.length) {
+		changed = true;
+	}
+
+	if (!changed) {
+		return { tasks, changed: false };
+	}
+
+	return { tasks: next, changed: true };
 };
 
 export const taskStore = {
@@ -628,6 +703,63 @@ export const taskStore = {
 		});
 	},
 
+	setStatusFilters(statuses: TaskStatus[]) {
+		withDataUpdate((data) => {
+			const ordered = orderStatuses(statuses);
+			if (statusesEqual(ordered, data.filters.statuses)) {
+				return data;
+			}
+
+			return {
+				...data,
+				filters: {
+					...data.filters,
+					statuses: ordered
+				}
+			};
+		});
+	},
+
+	toggleStatusFilter(status: TaskStatus) {
+		if (!STATUS_SET.has(status)) {
+			return;
+		}
+
+		withDataUpdate((data) => {
+			const current = new Set(data.filters.statuses);
+			if (current.has(status)) {
+				current.delete(status);
+			} else {
+				current.add(status);
+			}
+
+			const nextStatuses = orderStatuses(current);
+			if (statusesEqual(nextStatuses, data.filters.statuses)) {
+				return data;
+			}
+
+			return {
+				...data,
+				filters: {
+					...data.filters,
+					statuses: nextStatuses
+				}
+			};
+		});
+	},
+
+	selectAllStatuses() {
+		this.setStatusFilters(STATUS_ORDER);
+	},
+
+	clearStatusFilters() {
+		this.setStatusFilters([]);
+	},
+
+	resetStatusFilters() {
+		this.setStatusFilters(cloneDefaultStatusSelection());
+	},
+
 	selectPreview(taskId: string | null) {
 		store.update((state) => ({ ...state, previewTaskId: taskId }));
 	},
@@ -722,9 +854,29 @@ export const taskStore = {
 	}
 };
 
+export const statusFilters = derived(taskStore, ($state) => $state.data.filters.statuses);
+
 export const activeProject = derived(taskStore, ($state) => {
 	const activeId = $state.data.activeProjectId;
 	return $state.data.projects.find((project) => project.id === activeId) ?? $state.data.projects[0] ?? null;
+});
+
+export const filteredProject = derived([activeProject, statusFilters], ([$project, $statuses]) => {
+	if (!$project) {
+		return null;
+	}
+
+	const allowed = new Set<TaskStatus>($statuses);
+	if (allowed.size === 0) {
+		return { ...$project, tasks: [] };
+	}
+
+	const { tasks, changed } = filterTasksByStatus($project.tasks, allowed);
+	if (!changed) {
+		return $project;
+	}
+
+	return { ...$project, tasks };
 });
 
 export const activeTask = derived(taskStore, ($state) => {

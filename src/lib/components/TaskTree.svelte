@@ -4,6 +4,7 @@
 	import TaskItem from './TaskItem.svelte';
 
 	export let project: Project | null = null;
+	export let emptyMessage = 'No tasks yet. Create your first task to get started.';
 
 	let newTaskTitle = '';
 
@@ -36,9 +37,7 @@
 		</form>
 
 		{#if project.tasks.length === 0}
-			<div class="rounded-lg border border-slate-200 bg-slate-50 p-6 text-center text-slate-500">
-				No tasks yet. Create your first task to get started.
-			</div>
+			<div class="rounded-lg border border-slate-200 bg-slate-50 p-6 text-center text-slate-500">{emptyMessage}</div>
 		{:else}
 			<div class="space-y-4">
 				{#each project.tasks as task (task.id)}

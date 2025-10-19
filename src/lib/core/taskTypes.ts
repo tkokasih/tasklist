@@ -37,6 +37,10 @@ export interface TaskSnapshot {
 	data: Project[];
 }
 
+export interface TaskFilters {
+	statuses: TaskStatus[];
+}
+
 export interface TaskData {
 	projects: Project[];
 	activeProjectId: string | null;
@@ -44,4 +48,5 @@ export interface TaskData {
 	recentTaskIds: string[];
 	snapshots: TaskSnapshot[];
 	lastSavedAt?: string;
+	filters: TaskFilters;
 }

@@ -1,7 +1,13 @@
 <script lang="ts">
-	import { activeProject, ProjectHeader, SearchFilterRibbon, SidePanel, TaskTree } from '$lib';
+	import { activeProject, filteredProject, ProjectHeader, SearchFilterRibbon, SidePanel, TaskTree } from '$lib';
 
 	$: project = $activeProject;
+	$: visibleProject = $filteredProject ?? project;
+	$: showFilteredEmpty =
+		Boolean(project && visibleProject && project.tasks.length > 0 && visibleProject.tasks.length === 0);
+	$: emptyMessage = showFilteredEmpty
+		? 'No tasks match the current status filters.'
+		: 'No tasks yet. Create your first task to get started.';
 </script>
 
 <main class="min-h-screen bg-slate-100 py-12">
@@ -21,7 +27,7 @@
 					</p>
 				</header>
 
-				<TaskTree {project} />
+				<TaskTree project={visibleProject} {emptyMessage} />
 			</section>
 		</div>
 

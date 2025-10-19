@@ -9,8 +9,12 @@
 >
 	<h2 id="tasklist-search-filter-heading" class="sr-only">Search and filter tasks</h2>
 
-	<div class="flex flex-wrap items-center justify-between gap-4">
-		<RibbonSearch />
-		<RibbonFilters />
+	<div class="flex flex-col gap-4">
+		<div class="flex flex-wrap items-center gap-4">
+			<RibbonSearch />
+		</div>
+		<div class="flex flex-wrap items-start justify-between gap-4">
+			<RibbonFilters />
+		</div>
 	</div>
 </section>
