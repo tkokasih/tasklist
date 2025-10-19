@@ -12,6 +12,8 @@ _Last updated: October 18, 2025_
 - [x] **Responsive task workspace width** — Allow the task column to expand on large screens while capping max width and using generous inner padding so text remains readable. _Shipped October 18, 2025 — widened `+page.svelte` container to max-w-[120rem]._
 - [x] **Compact task rows** — Rebuild `TaskItem` spacing so the summary line fits on one row by default, with secondary metadata (status, assignee, timers) tucked into inline badges or hoverable affordances. _Shipped October 18, 2025 — introduced `TaskRowSummary` and density utilities._
 - [x] **Sticky side utilities** — Convert `SidePanel` into a fixed column that remains anchored on scroll, ensuring data snapshots and active controls stay visible even at deep scroll positions. _Shipped October 19, 2025 — reserved right-edge space on large screens, fixed the sidebar, and added an internal scroll container with dedicated styling so utility cards stay pinned yet independently scrollable._
+- [ ] **SidePanel accordion discipline** — Allow only one utility card to expand at a time to reduce vertical sprawl inside the fixed panel.
+- [ ] **Floating timer control** — Surface a compact timer widget that stays visible while the sidebar is collapsed or scrolled out of view.
 - [ ] **Collapsible sidebar with floating timer** — Add a slide-out affordance to collapse the side panel; when collapsed, show a minimal floating timer popover that exposes start/pause, elapsed time, and quick re-open.
 
 ## Task Editing Experience
