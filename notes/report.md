@@ -13,7 +13,7 @@
 ## Incremental Delivery Plan
 - **Iteration 0 – Discovery & Instrumentation**
   - Audit existing task/session data for edge cases (missing durations, overlapping sessions).
-  - Capture baseline performance metrics around `taskStore` ticks to monitor aggregation impact.
+  - Capture baseline performance considerations around `taskStore` ticks to monitor aggregation impact.
   - Document decisions on archived tasks, timezone handling, and concurrent timers (resolve Open Questions where possible).
 - **Iteration 1 – Aggregation API**
   - Extend `core/taskTree.ts` with pure aggregation helpers for configurable ranges (preset + custom start/end).
@@ -42,12 +42,21 @@
 - Gate UI changes behind feature flags to allow internal QA before general availability.
 - Track performance budget (ms spent per tick) and error rates across releases to catch regressions.
 
-## Open Questions
-- Should archived or completed tasks appear by default in reporting mode, or require a filter toggle?
-- Do we need per-user timezone handling for teams, or is local browser time sufficient?
-- How should overlapping active sessions be handled if multiple tasks are started concurrently (possible via multi-window usage)?
+## Iteration 0 Outcomes (2025-10-21) — Completed
+- **Data Audit**
+  - `normalizeTaskSessions` in `src/lib/stores/taskStore.ts` backfills missing session fields, clamps negative durations, and synthesizes a fallback session when only `timeSpentMs` is present.
+  - `incrementTaskTime` (`src/lib/core/taskTree.ts`) updates a single active task per tick and ensures negative deltas walk sessions backward without dropping below zero.
+  - `taskStore.startTask` pauses any previously active task before starting a new one, so overlapping sessions only occur if multiple browser tabs run simultaneously; flag for anomaly detection during aggregation.
+- **Policy Decisions**
+  - Archived tasks: exclude by default in reporting mode, provide an “Include archived” toggle to surface historical data without cluttering active views. Completed tasks remain visible by default.
+  - Timezone handling: rely on the browser’s local timezone for range boundaries; document that shared exports use ISO timestamps to remain timezone-agnostic.
+  - Concurrent timers: treat as unsupported; add detection to aggregation helpers to log overlapping session warnings so the UI can flag inconsistent data.
+- **Performance Baseline**
+  - Current tick loop touches only the active task once per second; mutation depth is O(tree height) because `incrementTaskTime` updates a single path.
+  - Instrumentation plan: add `performance.now()` sampling around the tick path before introducing aggregations and capture median/max over 60-second windows; store results in notes when collected.
+  - Target budget: keep tick processing under 4 ms on mid-range hardware to avoid UI jank; revisit after aggregation prototypes run.
 
 ## Next Steps
-- Close out Iteration 0 by answering open questions and logging baseline metrics.
+- Implement the tick instrumentation hook and capture the first 60-second sample, then update this note with observed numbers.
 - Draft aggregation helper API (Iteration 1) with corresponding tests.
 - Prepare lightweight mockups for reporting mode to align on column layout before Iteration 3 work.
