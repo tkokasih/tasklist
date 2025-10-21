@@ -8,6 +8,9 @@ declare global {
 		// interface PageState {}
 		// interface Platform {}
 	}
+
+	declare const __APP_GIT_COMMIT__: string | undefined;
+	declare const __APP_VERSION__: string | undefined;
 }
 
 export {};

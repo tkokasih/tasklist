@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
+	import { APP_VERSION_DISPLAY } from '$lib/core/version';
 	import { formatTimestamp } from '$lib/core/time';
 	import { activeProject, taskStore } from '$lib/stores/taskStore';
 
@@ -106,6 +107,7 @@ $: if (creating) {
 				<h1 class="text-3xl font-semibold text-slate-900">Tasklist</h1>
 				<p class="text-sm text-slate-500">Select or create a project to begin managing tasks.</p>
 			{/if}
+			<p class="text-xs uppercase tracking-wide text-slate-400">{APP_VERSION_DISPLAY}</p>
 		</div>
 
 		<div class="flex flex-wrap items-center gap-3">

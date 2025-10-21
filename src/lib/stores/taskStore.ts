@@ -239,7 +239,7 @@ const initialState: TaskStoreState = {
 
 const store = writable<TaskStoreState>(initialState);
 
-let tickHandle: ReturnType<typeof window.setInterval> | null = null;
+let tickHandle: number | null = null;
 
 const stopTicking = () => {
 	if (tickHandle) {
