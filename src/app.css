@@ -32,23 +32,23 @@
 		@apply border border-violet-300 bg-violet-50/80 ring-1 ring-violet-200;
 	}
 
-		.task-row--completed {
-			@apply border border-emerald-100 bg-emerald-50/60 text-slate-600;
-		}
+	.task-row--completed {
+		@apply border border-emerald-200 bg-emerald-50/80 text-emerald-900;
+	}
 
-		.task-row--completed:hover,
-		.task-row--completed:focus-within {
-			@apply bg-emerald-50/70;
-		}
+	.task-row--completed:hover,
+	.task-row--completed:focus-within {
+		@apply bg-emerald-50;
+	}
 
-		.task-row--archived {
-			@apply border border-slate-100 bg-slate-100/60 text-slate-400;
-		}
+	.task-row--archived {
+		@apply border border-slate-200 bg-slate-100 text-slate-500;
+	}
 
-		.task-row--archived:hover,
-		.task-row--archived:focus-within {
-			@apply bg-slate-100/70;
-		}
+	.task-row--archived:hover,
+	.task-row--archived:focus-within {
+		@apply bg-slate-100;
+	}
 
 	.task-row__toggle {
 		@apply flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-100 disabled:cursor-default disabled:opacity-60;
@@ -63,11 +63,11 @@
 		}
 
 	.task-row__title--completed {
-		@apply text-slate-600 line-through decoration-emerald-200;
+		@apply text-emerald-800 line-through decoration-emerald-400;
 	}
 
 	.task-row__title--archived {
-		@apply text-slate-400;
+		@apply text-slate-500;
 	}
 
 	.task-row__title-input {
@@ -135,11 +135,11 @@
 	}
 
 	.task-row--completed .task-row__action--success {
-		@apply border-emerald-300 bg-emerald-200 text-emerald-700 hover:bg-emerald-200/80;
+		@apply border-emerald-600 bg-emerald-500 text-white hover:bg-emerald-600;
 	}
 
 	.task-row--archived .task-row__action {
-		@apply border-slate-200 text-slate-400 hover:bg-slate-100/70;
+		@apply border-slate-300 text-slate-400 hover:bg-slate-200;
 	}
 
 	.task-row:hover:not(.task-row--active):not(.task-row--preview):not(.task-row--selected):not(.task-row--completed):not(.task-row--archived),
