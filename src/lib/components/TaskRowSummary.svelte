@@ -20,6 +20,14 @@
 		paused: 'task-row__status--paused'
 	};
 
+	const rowStatusStyles: Record<Task['status'], string> = {
+		archived: 'task-row--archived',
+		completed: 'task-row--completed',
+		idle: '',
+		'in-progress': '',
+		paused: ''
+	};
+
 	export let task: Task;
 	export let expanded = true;
 	export let hasChildren = false;
@@ -46,8 +54,9 @@ export let onSelect: () => void = noop;
 </script>
 
 <div
-	class={`task-row ${isActive ? 'task-row--active' : ''} ${isPreviewed ? 'task-row--preview' : ''} ${
-		isSelected && !isActive ? 'task-row--selected' : ''
+	class={`task-row ${rowStatusStyles[task.status]} ${isActive ? 'task-row--active' : ''} ${
+		isPreviewed ? 'task-row--preview' : ''
+	} ${isSelected && !isActive ? 'task-row--selected' : ''
 	}`}
 	aria-selected={isSelected}
 	on:pointerdown={onSelect}
@@ -82,7 +91,9 @@ export let onSelect: () => void = noop;
 			{:else}
 				<button
 					type="button"
-					class="task-row__title"
+					class={`task-row__title ${
+						task.status === 'completed' ? 'task-row__title--completed' : ''
+					} ${task.status === 'archived' ? 'task-row__title--archived' : ''}`}
 					on:dblclick={() => (editing = true)}
 				>
 					{task.title}
