@@ -27,6 +27,7 @@ import {
 	STORAGE_KEY
 } from '$lib/core/persistence';
 import type { Project, Task, TaskData, TaskSession, TaskStatus } from '$lib/core/taskTypes';
+import { measureAndRecord } from './tickInstrumentation';
 
 const isoNow = () => new Date().toISOString();
 
@@ -256,7 +257,7 @@ const beginTicking = () => {
 	stopTicking();
 
 	tickHandle = window.setInterval(() => {
-		store.update((state) => {
+		measureAndRecord(() => store.update((state) => {
 			const activeId = state.data.activeTaskId;
 			if (!activeId || state.timerStartedAt === null) {
 				return state;
@@ -279,7 +280,7 @@ const beginTicking = () => {
 			});
 
 			return { ...state, data: nextData, lastTickAt: nowMs };
-		});
+		}));
 	}, 1000);
 };
 
