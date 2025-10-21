@@ -72,3 +72,13 @@
 - Capture the first 60-second tick sample using the new instrumentation and update this note with observed numbers.
 - Sketch how aggregated maps flow into reporting mode data structures to validate selector API requirements and drive UI shape.
 - Prepare lightweight mockups for reporting mode to align on column layout before Iteration 3 work.
+
+## Reporting Data Flow Sketch
+- Selector entry (`createTimeAggregationSelector`) emits `{ range, totals, warnings }`.
+- UI composition:
+  - `TaskTree` (reporting mode) pulls selector output + raw task tree to render rows; uses map lookups (`totals.get(task.id)`) for per-column values without re-traversal.
+  - Sidebar cards subscribe to the same selector for summary stats (total range sum, top tasks).
+  - Warning stream -> badge/toast component highlighting tasks with active overlaps.
+- State coordination:
+  - Range selector component updates a derived store (`reportingRangeStore`) that feeds the selector factory.
+  - Feature flag gating ensures legacy UI ignores reporting stores until enabled.
