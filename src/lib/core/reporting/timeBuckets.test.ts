@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Task, TaskSession } from '$lib/core/taskTypes';
-import { aggregateSessions, bucketSessionsForRange } from './timeBuckets';
+import { buildPresetRange } from '../time';
+import { aggregateSessions, aggregateTaskTree, bucketSessionsForRange } from './timeBuckets';
 
 const iso = (date: string, time: string) => `${date}T${time}.000Z`;
 
@@ -101,5 +102,37 @@ describe('bucketSessionsForRange', () => {
 
 		const excluded = bucketSessionsForRange(task, rangeConfig, { includeCompleted: false });
 		expect(excluded.totalMs).toBe(0);
+	});
+});
+
+describe('aggregateTaskTree', () => {
+	it('aggregates root and children and returns map keyed by task id', () => {
+		const parent: Task = {
+			id: 'parent',
+			title: 'Parent',
+			status: 'completed',
+			sessions: [createSession(iso('2024-01-02', '09:00:00'), iso('2024-01-02', '10:00:00'), 60 * 60 * 1000)],
+			children: [],
+			timeSpentMs: 60 * 60 * 1000,
+			createdAt: iso('2024-01-01', '00:00:00'),
+			updatedAt: iso('2024-01-01', '00:00:00')
+		};
+		const child: Task = {
+			...createTask(
+				[createSession(iso('2024-01-03', '11:00:00'), iso('2024-01-03', '13:00:00'), 2 * 60 * 60 * 1000)],
+				'in-progress'
+			),
+			id: 'child'
+		};
+		parent.children = [child];
+
+		const rangeConfig = buildPresetRange('last-seven-days', { nowFactory: () => new Date(iso('2024-01-05', '00:00:00')) });
+
+		const result = aggregateTaskTree(parent, rangeConfig);
+
+		expect(result.range).toEqual(rangeConfig);
+		expect(result.taskTotals.size).toBe(2);
+		expect(result.taskTotals.get('parent')?.totalMs).toBe(60 * 60 * 1000);
+		expect(result.taskTotals.get('child')?.totalMs).toBe(2 * 60 * 60 * 1000);
 	});
 });

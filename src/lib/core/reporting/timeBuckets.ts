@@ -1,12 +1,5 @@
 import type { Task, TaskSession } from '$lib/core/taskTypes';
-
-export type TimeRangePreset = 'today' | 'this-week' | 'last-seven-days';
-
-export interface TimeRange {
-	preset?: TimeRangePreset;
-	start: Date;
-	end: Date;
-}
+import type { TimeRangeConfig } from '../time';
 
 export interface AggregationOptions {
 	includeArchived?: boolean;
@@ -21,13 +14,33 @@ export interface SessionAggregation {
 }
 
 export interface AggregationResult {
-	range: TimeRange;
+	range: TimeRangeConfig;
 	taskTotals: Map<string, SessionAggregation>;
 }
 
+export const aggregateTaskTree = (
+	root: Task,
+	range: TimeRangeConfig,
+	options: AggregationOptions = {}
+): AggregationResult => {
+	const taskTotals = new Map<string, SessionAggregation>();
+
+	const walk = (task: Task) => {
+		const aggregation = bucketSessionsForRange(task, range, options);
+		taskTotals.set(task.id, aggregation);
+
+		for (const child of task.children ?? []) {
+			walk(child);
+		}
+	};
+
+	walk(root);
+	return { range, taskTotals };
+};
+
 export const bucketSessionsForRange = (
 	task: Task,
-	range: TimeRange,
+	range: TimeRangeConfig,
 	options: AggregationOptions = {}
 ): SessionAggregation => {
 	const { includeArchived = false, includeCompleted = true } = options;
@@ -57,7 +70,7 @@ export const bucketSessionsForRange = (
 	};
 };
 
-export const aggregateSessions = (sessions: TaskSession[], range: TimeRange) => {
+export const aggregateSessions = (sessions: TaskSession[], range: TimeRangeConfig) => {
 	const buckets: Record<string, number> = {};
 	let totalMs = 0;
 	let activeOverlapDetected = false;

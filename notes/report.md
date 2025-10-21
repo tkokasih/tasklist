@@ -59,10 +59,12 @@
 ## Iteration 1 Progress (2025-10-21)
 - Created `src/lib/core/reporting/timeBuckets.ts` with session aggregation helpers and range/option typings.
 - Added Vitest coverage in `src/lib/core/reporting/timeBuckets.test.ts` verifying range clamping, status filters, and active-session detection.
-- Next focus: expand helpers to aggregate full task trees and wire presets/range utilities in `core/time.ts`.
+- Extended helpers to aggregate entire task trees (returns normalized map) and aligned shared range types with `core/time.ts`.
+- Added preset range builders (`buildPresetRange`) and supporting utilities (start/end of day/week) in `src/lib/core/time.ts`.
+- Next focus: expose tree-level aggregation entry point for multiple projects and design store selector interface.
 
 ## Next Steps
 - Implement the tick instrumentation hook and capture the first 60-second sample, then update this note with observed numbers.
-- Extend aggregation helpers to roll up nested task trees and expose a normalized per-task map.
-- Introduce range preset utilities in `core/time.ts` and plan store selector integration.
+- Extend aggregation helpers to support aggregating across projects and return combined maps keyed by task id.
+- Design selector factory shape for `taskStore` integration, including memoization strategy and feature flag wiring.
 - Prepare lightweight mockups for reporting mode to align on column layout before Iteration 3 work.
