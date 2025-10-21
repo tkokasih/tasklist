@@ -45,6 +45,7 @@ export interface TaskData {
 	projects: Project[];
 	activeProjectId: string | null;
 	activeTaskId: string | null;
+	selectedTaskId: string | null;
 	recentTaskIds: string[];
 	snapshots: TaskSnapshot[];
 	lastSavedAt?: string;

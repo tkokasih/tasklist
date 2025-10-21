@@ -80,6 +80,7 @@ export const createInitialData = (): TaskData => {
 		projects: [project],
 		activeProjectId: project.id,
 		activeTaskId: null,
+		selectedTaskId: null,
 		recentTaskIds: [],
 		snapshots: [],
 		lastSavedAt: now(),

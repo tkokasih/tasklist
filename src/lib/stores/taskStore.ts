@@ -150,6 +150,7 @@ const sanitizeData = (data: TaskData): TaskData => {
 		.slice(0, 5);
 
 	const activeTaskId = hasTask(data.activeTaskId) ? data.activeTaskId : null;
+	const selectedTaskId = hasTask(data.selectedTaskId) ? data.selectedTaskId : null;
 
 	const rawStatuses = Array.isArray(data.filters?.statuses) ? (data.filters.statuses as TaskStatus[]) : undefined;
 	const normalizedStatuses = (() => {
@@ -165,6 +166,7 @@ const sanitizeData = (data: TaskData): TaskData => {
 		projects,
 		activeProjectId,
 		activeTaskId,
+		selectedTaskId,
 		recentTaskIds: limitedRecent,
 		snapshots: data.snapshots ?? [],
 		lastSavedAt: data.lastSavedAt ?? isoNow(),
@@ -210,6 +212,20 @@ const touchData = (data: TaskData): TaskData => {
 	const next = { ...data, lastSavedAt: isoNow() };
 	persist(next);
 	return next;
+};
+
+const ensureValidSelectedTask = (data: TaskData): TaskData => {
+	const selectedId = data.selectedTaskId ?? null;
+	if (!selectedId) {
+		return selectedId === null ? data : { ...data, selectedTaskId: null };
+	}
+
+	const located = locateTask(data.projects, selectedId);
+	if (located) {
+		return data;
+	}
+
+	return { ...data, selectedTaskId: null };
 };
 
 const initialState: TaskStoreState = {
@@ -274,7 +290,8 @@ const withDataUpdate = (updater: (data: TaskData) => TaskData) => {
 			return state;
 		}
 
-		const touched = touchData(nextData);
+		const validated = ensureValidSelectedTask(nextData);
+		const touched = touchData(validated);
 		return { ...state, data: touched };
 	});
 };
@@ -338,7 +355,11 @@ export const taskStore = {
 				return data;
 			}
 
-			return { ...data, activeProjectId: projectId };
+			const locatedSelection = data.selectedTaskId ? locateTask(data.projects, data.selectedTaskId) : null;
+			const selectedTaskId =
+				locatedSelection && locatedSelection.project.id === projectId ? locatedSelection.task.id : null;
+
+			return { ...data, activeProjectId: projectId, selectedTaskId };
 		});
 	},
 
@@ -381,12 +402,20 @@ export const taskStore = {
 			const activeTaskId = activeTaskStillPresent ?? null;
 			clearedTimer = Boolean(state.data.activeTaskId && !activeTaskStillPresent);
 
-			const nextData = touchData({
-				...state.data,
-				projects,
-				activeProjectId,
-				activeTaskId
-			});
+			const selectedTaskId =
+				state.data.selectedTaskId && locateTask(projects, state.data.selectedTaskId)
+					? state.data.selectedTaskId
+					: null;
+
+			const nextData = touchData(
+				ensureValidSelectedTask({
+					...state.data,
+					projects,
+					activeProjectId,
+					activeTaskId,
+					selectedTaskId
+				})
+			);
 
 			return {
 				...state,
@@ -425,10 +454,12 @@ export const taskStore = {
 
 			createdTaskId = task.id;
 
-			const nextData = touchData({
-				...state.data,
-				projects
-			});
+			const nextData = touchData(
+				ensureValidSelectedTask({
+					...state.data,
+					projects
+				})
+			);
 
 			return { ...state, data: nextData };
 		});
@@ -448,12 +479,14 @@ export const taskStore = {
 
 			removed = true;
 			const wasActive = state.data.activeTaskId === taskId;
-			const nextData = touchData({
+			const baseData: TaskData = {
 				...state.data,
 				projects,
 				activeTaskId: wasActive ? null : state.data.activeTaskId,
+				selectedTaskId: state.data.selectedTaskId === taskId ? null : state.data.selectedTaskId,
 				recentTaskIds: state.data.recentTaskIds.filter((id) => id !== taskId)
-			});
+			};
+			const nextData = touchData(ensureValidSelectedTask(baseData));
 
 			clearedTimer = wasActive;
 
@@ -518,15 +551,19 @@ export const taskStore = {
 			}
 
 			const recentTaskIds = [taskId, ...state.data.recentTaskIds.filter((id) => id !== taskId)].slice(0, 5);
+			const selectionChanged = state.data.selectedTaskId !== taskId;
 
 			const nextData: TaskData = {
 				...state.data,
 				projects,
 				activeTaskId: taskId,
+				selectedTaskId: taskId,
 				recentTaskIds
 			};
 
-			const finalData = changed || activeTaskId !== taskId ? touchData(nextData) : nextData;
+			const preparedData = ensureValidSelectedTask(nextData);
+			const shouldPersist = changed || activeTaskId !== taskId || selectionChanged;
+			const finalData = shouldPersist ? touchData(preparedData) : preparedData;
 
 			shouldStartTimer = true;
 
@@ -552,11 +589,13 @@ export const taskStore = {
 			}
 
 			const { projects, changed } = setTaskStatus(state.data.projects, activeId, 'paused');
-			const nextData = touchData({
-				...state.data,
-				projects,
-				activeTaskId: null
-			});
+			const nextData = touchData(
+				ensureValidSelectedTask({
+					...state.data,
+					projects,
+					activeTaskId: null
+				})
+			);
 
 			shouldStop = true;
 
@@ -586,11 +625,13 @@ export const taskStore = {
 				clearedTimer = true;
 			}
 
-			const nextData = touchData({
+			const baseData: TaskData = {
 				...state.data,
 				projects,
-				activeTaskId
-			});
+				activeTaskId,
+				selectedTaskId: state.data.selectedTaskId === taskId ? null : state.data.selectedTaskId
+			};
+			const nextData = touchData(ensureValidSelectedTask(baseData));
 
 			return {
 				...state,
@@ -618,11 +659,13 @@ export const taskStore = {
 				clearedTimer = true;
 			}
 
-			const nextData = touchData({
+			const baseData: TaskData = {
 				...state.data,
 				projects,
-				activeTaskId
-			});
+				activeTaskId,
+				selectedTaskId: state.data.selectedTaskId === taskId ? null : state.data.selectedTaskId
+			};
+			const nextData = touchData(ensureValidSelectedTask(baseData));
 
 			return {
 				...state,
@@ -760,6 +803,25 @@ export const taskStore = {
 		this.setStatusFilters(cloneDefaultStatusSelection());
 	},
 
+	selectTask(taskId: string | null) {
+		store.update((state) => {
+			const requestedId = taskId ?? null;
+			const nextSelected = requestedId && locateTask(state.data.projects, requestedId) ? requestedId : null;
+
+			if (nextSelected === state.data.selectedTaskId) {
+				return state;
+			}
+
+			const baseData: TaskData = {
+				...state.data,
+				selectedTaskId: nextSelected
+			};
+			const nextData = touchData(ensureValidSelectedTask(baseData));
+
+			return { ...state, data: nextData };
+		});
+	},
+
 	selectPreview(taskId: string | null) {
 		store.update((state) => ({ ...state, previewTaskId: taskId }));
 	},
@@ -789,7 +851,8 @@ export const taskStore = {
 				...data,
 				projects,
 				activeProjectId,
-				activeTaskId: null
+				activeTaskId: null,
+				selectedTaskId: null
 			};
 		});
 
@@ -885,6 +948,16 @@ export const activeTask = derived(taskStore, ($state) => {
 	}
 
 	const located = locateTask($state.data.projects, $state.data.activeTaskId);
+	return located?.task ?? null;
+});
+
+export const selectedTask = derived(taskStore, ($state) => {
+	const selectedId = $state.data.selectedTaskId;
+	if (!selectedId) {
+		return null;
+	}
+
+	const located = locateTask($state.data.projects, selectedId);
 	return located?.task ?? null;
 });
 

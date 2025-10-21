@@ -23,6 +23,7 @@ let showDetails = false;
 
 	$: state = $taskStore;
 	$: isActive = state.data.activeTaskId === task.id;
+	$: isSelected = state.data.selectedTaskId === task.id;
 	$: isPreviewed = state.previewTaskId === task.id;
 	$: latestSession = task.sessions?.length ? task.sessions[task.sessions.length - 1] : null;
 	$: activeSessionElapsed =
@@ -93,12 +94,16 @@ const handleMoveUp = () => {
 	taskStore.moveTaskUp(task.id);
 };
 
-	const handleMoveDown = () => {
-		taskStore.moveTaskDown(task.id);
-	};
+const handleMoveDown = () => {
+	taskStore.moveTaskDown(task.id);
+};
 
 	const handleComplete = () => {
 		taskStore.completeTask(task.id);
+	};
+
+	const selectTask = () => {
+		taskStore.selectTask(task.id);
 	};
 
 	const commitTitle = (): boolean => {
@@ -203,9 +208,11 @@ const handleMoveUp = () => {
 		bind:draftTitle
 		bind:titleInput
 		{isActive}
+		{isSelected}
 		{isPreviewed}
 		{latestSession}
 		{activeSessionElapsed}
+		onSelect={selectTask}
 		onToggleExpand={toggleExpand}
 		onStartOrPause={handleStartOrPause}
 		onArchive={handleArchive}

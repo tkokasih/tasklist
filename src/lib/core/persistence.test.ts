@@ -9,6 +9,7 @@ import {
 	serializeData,
 	serializeSnapshots
 } from './persistence';
+import { DEFAULT_STATUS_FILTERS } from './taskTree';
 import type { TaskData, TaskSnapshot } from './taskTypes';
 
 const sampleData: TaskData = {
@@ -23,9 +24,13 @@ const sampleData: TaskData = {
 	],
 	activeProjectId: 'project-1',
 	activeTaskId: null,
+	selectedTaskId: null,
 	recentTaskIds: [],
 	snapshots: [],
-	lastSavedAt: '2024-01-01T00:00:00.000Z'
+	lastSavedAt: '2024-01-01T00:00:00.000Z',
+	filters: {
+		statuses: DEFAULT_STATUS_FILTERS
+	}
 };
 
 const sampleSnapshots: TaskSnapshot[] = [

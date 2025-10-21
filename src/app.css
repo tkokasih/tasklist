@@ -28,6 +28,10 @@
 		@apply border border-amber-200 ring-1 ring-amber-200;
 	}
 
+	.task-row--selected {
+		@apply border border-violet-300 bg-violet-50/80 ring-1 ring-violet-200;
+	}
+
 	.task-row__toggle {
 		@apply flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-100 disabled:cursor-default disabled:opacity-60;
 	}
@@ -104,8 +108,8 @@
 		@apply border-emerald-500 text-emerald-600 hover:bg-emerald-50;
 	}
 
-	.task-row:hover:not(.task-row--active):not(.task-row--preview),
-	.task-row:focus-within:not(.task-row--active):not(.task-row--preview) {
+	.task-row:hover:not(.task-row--active):not(.task-row--preview):not(.task-row--selected),
+	.task-row:focus-within:not(.task-row--active):not(.task-row--preview):not(.task-row--selected) {
 		@apply bg-blue-50/80;
 	}
 

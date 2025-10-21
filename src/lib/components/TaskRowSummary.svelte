@@ -23,10 +23,11 @@
 	export let task: Task;
 	export let expanded = true;
 	export let hasChildren = false;
-	export let editing = false;
-	export let draftTitle = '';
-	export let titleInput: HTMLInputElement | null = null;
-	export let isActive = false;
+export let editing = false;
+export let draftTitle = '';
+export let titleInput: HTMLInputElement | null = null;
+export let isActive = false;
+export let isSelected = false;
 export let isPreviewed = false;
 export let latestSession: TaskSession | null = null;
 export let activeSessionElapsed = 0;
@@ -39,9 +40,17 @@ export let onMoveDown: () => void = noop;
 export let onComplete: () => void = noop;
 export let onOpenSubtaskForm: () => void = noop;
 export let onTitleKeydown: (event: KeyboardEvent) => void = noop;
+export let onSelect: () => void = noop;
 </script>
 
-<div class={`task-row ${isActive ? 'task-row--active' : ''} ${isPreviewed ? 'task-row--preview' : ''}`}>
+<div
+	class={`task-row ${isActive ? 'task-row--active' : ''} ${isPreviewed ? 'task-row--preview' : ''} ${
+		isSelected && !isActive ? 'task-row--selected' : ''
+	}`}
+	aria-selected={isSelected}
+	on:pointerdown={onSelect}
+	on:focusin={onSelect}
+>
 	<button
 		class="task-row__toggle"
 		type="button"
