@@ -16,7 +16,7 @@
   - Capture baseline performance considerations around `taskStore` ticks to monitor aggregation impact.
   - Document decisions on archived tasks, timezone handling, and concurrent timers (resolve Open Questions where possible).
 - **Iteration 1 – Aggregation API**
-  - Extend `core/taskTree.ts` with pure aggregation helpers for configurable ranges (preset + custom start/end).
+  - Add `core/reporting/timeBuckets.ts` with pure aggregation helpers for configurable ranges (preset + custom start/end).
   - Add `core/time.ts` utilities for generating standard ranges and formatting summed durations.
   - Ship Vitest coverage for aggregation helpers and tick scenarios; guard by feature flag to keep UI untouched.
 - **Iteration 2 – Store Integration**
@@ -56,7 +56,13 @@
   - Instrumentation plan: add `performance.now()` sampling around the tick path before introducing aggregations and capture median/max over 60-second windows; store results in notes when collected.
   - Target budget: keep tick processing under 4 ms on mid-range hardware to avoid UI jank; revisit after aggregation prototypes run.
 
+## Iteration 1 Progress (2025-10-21)
+- Created `src/lib/core/reporting/timeBuckets.ts` with session aggregation helpers and range/option typings.
+- Added Vitest coverage in `src/lib/core/reporting/timeBuckets.test.ts` verifying range clamping, status filters, and active-session detection.
+- Next focus: expand helpers to aggregate full task trees and wire presets/range utilities in `core/time.ts`.
+
 ## Next Steps
 - Implement the tick instrumentation hook and capture the first 60-second sample, then update this note with observed numbers.
-- Draft aggregation helper API (Iteration 1) with corresponding tests.
+- Extend aggregation helpers to roll up nested task trees and expose a normalized per-task map.
+- Introduce range preset utilities in `core/time.ts` and plan store selector integration.
 - Prepare lightweight mockups for reporting mode to align on column layout before Iteration 3 work.
