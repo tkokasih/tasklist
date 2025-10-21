@@ -522,6 +522,22 @@ export const taskStore = {
 		});
 	},
 
+	updateTaskDescription(taskId: string, description: string) {
+		withDataUpdate((data) => {
+			const nextDescription = description.trim().length > 0 ? description : undefined;
+			const { projects, changed } = updateTaskById(data.projects, taskId, (task) => ({
+				...task,
+				description: nextDescription
+			}));
+
+			if (!changed) {
+				return data;
+			}
+
+			return { ...data, projects };
+		});
+	},
+
 	startTask(taskId: string) {
 		const currentState = get(store);
 		if (currentState.data.activeTaskId === taskId && currentState.timerStartedAt !== null) {

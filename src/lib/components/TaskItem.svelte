@@ -10,16 +10,17 @@
 
 	let expanded = true;
 	let editing = false;
-	let draftTitle = task.title;
-let showDetails = false;
+	let draftContent = '';
+	let showDetails = false;
 	let addingSubtask = false;
 	let subtaskTitle = '';
-	let titleInput: HTMLInputElement | null = null;
+	let titleField: HTMLTextAreaElement | null = null;
 	let subtaskInput: HTMLInputElement | null = null;
 	let isDraftNewTask = false;
 	let wasEditing = false;
-	let initialTitleSnapshot = task.title.trim();
+	let initialContentSnapshot = '';
 	let pendingReapplyFocus = false;
+	let isTitleMultiline = false;
 
 	$: state = $taskStore;
 	$: isActive = state.data.activeTaskId === task.id;
@@ -29,17 +30,25 @@ let showDetails = false;
 	$: activeSessionElapsed =
 		isActive && latestSession && !latestSession.endedAt ? Math.max(0, latestSession.durationMs) : 0;
 
-	$: if (!editing) {
-		draftTitle = task.title;
-		initialTitleSnapshot = task.title.trim();
-	}
+	const composeTaskContent = (currentTask: Task) => {
+		const baseTitle = currentTask.title;
+		const body = currentTask.description?.trim();
+		return body && body.length > 0 ? `${baseTitle}\n\n${body}` : baseTitle;
+	};
 
 	$: {
+		if (!editing) {
+			draftContent = composeTaskContent(task);
+			initialContentSnapshot = draftContent;
+			isTitleMultiline = draftContent.includes('\n');
+		}
+
 		if (editing && !wasEditing) {
-			initialTitleSnapshot = draftTitle.trim();
+			initialContentSnapshot = draftContent;
 			tick().then(() => {
-				titleInput?.focus();
-				titleInput?.select();
+				titleField?.focus();
+				titleField?.select();
+				resizeTitleField();
 			});
 		}
 
@@ -58,8 +67,9 @@ let showDetails = false;
 		if (!pendingReapplyFocus) {
 			pendingReapplyFocus = true;
 			tick().then(() => {
-				titleInput?.focus();
-				titleInput?.select();
+				titleField?.focus();
+				titleField?.select();
+				resizeTitleField();
 				taskStore.clearFocusedEditor(task.id);
 				pendingReapplyFocus = false;
 			});
@@ -69,7 +79,10 @@ let showDetails = false;
 	const indent = Math.min(depth * (1.1 / 3), 4.4 / 3);
 
 	onMount(() => {
+		draftContent = composeTaskContent(task);
+		initialContentSnapshot = draftContent;
 		isDraftNewTask = task.title.trim().length === 0;
+		isTitleMultiline = draftContent.includes('\n');
 		if (isDraftNewTask) {
 			editing = true;
 		}
@@ -94,9 +107,9 @@ const handleMoveUp = () => {
 	taskStore.moveTaskUp(task.id);
 };
 
-const handleMoveDown = () => {
-	taskStore.moveTaskDown(task.id);
-};
+	const handleMoveDown = () => {
+		taskStore.moveTaskDown(task.id);
+	};
 
 	const handleComplete = () => {
 		taskStore.completeTask(task.id);
@@ -106,33 +119,58 @@ const handleMoveDown = () => {
 		taskStore.selectTask(task.id);
 	};
 
-	const commitTitle = (): boolean => {
-		editing = false;
-		const trimmedDraft = draftTitle.trim();
-		const trimmedCurrent = task.title.trim();
+	const resizeTitleField = () => {
+		if (!titleField) {
+			return;
+		}
+		titleField.style.height = 'auto';
+		titleField.style.height = `${titleField.scrollHeight}px`;
+	};
 
-		if (!trimmedDraft) {
+	const commitTaskContent = (): boolean => {
+		editing = false;
+		const normalized = draftContent.replace(/\r\n/g, '\n').trim();
+		const currentTitle = task.title.trim();
+		const currentDescription = (task.description ?? '').replace(/\r\n/g, '\n').trim();
+
+		if (!normalized) {
 			if (isDraftNewTask) {
 				taskStore.deleteTask(task.id);
 			} else {
-				draftTitle = task.title;
+				draftContent = composeTaskContent(task);
+				isTitleMultiline = draftContent.includes('\n');
 			}
 			return false;
 		}
 
-		if (trimmedDraft !== trimmedCurrent) {
-			taskStore.updateTaskTitle(task.id, draftTitle);
+		const [firstLine, ...rest] = draftContent.replace(/\r\n/g, '\n').split('\n');
+		const nextTitle = firstLine.trim() || currentTitle || 'Untitled task';
+		const body = rest.join('\n').trim();
+
+		if (nextTitle !== task.title) {
+			taskStore.updateTaskTitle(task.id, nextTitle);
 		}
 
-		initialTitleSnapshot = trimmedDraft;
+		if (body !== currentDescription) {
+			taskStore.updateTaskDescription(task.id, body);
+		}
+
+		isTitleMultiline = body.length > 0;
+		draftContent = composeTaskContent({
+			...task,
+			title: nextTitle,
+			description: body.length > 0 ? body : undefined
+		});
+		initialContentSnapshot = draftContent;
 		isDraftNewTask = false;
 		return true;
 	};
 
 	const cancelEditing = () => {
-		const shouldRemove = isDraftNewTask && draftTitle.trim() === initialTitleSnapshot;
+		const shouldRemove = isDraftNewTask && draftContent.trim() === initialContentSnapshot.trim();
 		editing = false;
-		draftTitle = task.title;
+		draftContent = composeTaskContent(task);
+		isTitleMultiline = draftContent.includes('\n');
 		if (shouldRemove) {
 			taskStore.deleteTask(task.id);
 		}
@@ -159,9 +197,17 @@ const handleMoveDown = () => {
 	};
 
 	const handleTitleKeydown = (event: KeyboardEvent) => {
+		if (event.key === 'Enter' && event.shiftKey && !event.metaKey && !event.ctrlKey && !event.altKey) {
+			isTitleMultiline = true;
+			tick().then(() => {
+				resizeTitleField();
+			});
+			return;
+		}
+
 		if (event.key === 'Enter' && !event.shiftKey && !event.metaKey && !event.ctrlKey && !event.altKey) {
 			event.preventDefault();
-			const committed = commitTitle();
+			const committed = commitTaskContent();
 			if (committed) {
 				taskStore.createSiblingTaskAfter(task.id);
 			}
@@ -171,7 +217,7 @@ const handleMoveDown = () => {
 		if (event.key === 'Tab' && !event.metaKey && !event.ctrlKey && !event.altKey) {
 			event.preventDefault();
 			const wasEditing = editing;
-			const committed = commitTitle();
+			const committed = commitTaskContent();
 			if (!committed) {
 				if (wasEditing) {
 					editing = true;
@@ -197,6 +243,11 @@ const handleMoveDown = () => {
 			cancelEditing();
 		}
 	};
+
+	const handleTitleInput = () => {
+		isTitleMultiline = draftContent.includes('\n');
+		resizeTitleField();
+	};
 </script>
 
 <div class="space-y-1" style={`margin-left: ${indent}rem`}>
@@ -205,8 +256,10 @@ const handleMoveDown = () => {
 		{expanded}
 		hasChildren={task.children.length > 0}
 		bind:editing
-		bind:draftTitle
-		bind:titleInput
+		bind:draftContent
+		bind:titleInput={titleField}
+		{isTitleMultiline}
+		onTitleInput={handleTitleInput}
 		{isActive}
 		{isSelected}
 		{isPreviewed}
@@ -216,7 +269,7 @@ const handleMoveDown = () => {
 		onToggleExpand={toggleExpand}
 		onStartOrPause={handleStartOrPause}
 		onArchive={handleArchive}
-		onCommitTitle={commitTitle}
+		onCommitTitle={commitTaskContent}
 		onTitleKeydown={handleTitleKeydown}
 		onMoveUp={handleMoveUp}
 		onMoveDown={handleMoveDown}

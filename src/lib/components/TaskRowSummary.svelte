@@ -24,8 +24,10 @@
 	export let expanded = true;
 	export let hasChildren = false;
 export let editing = false;
-export let draftTitle = '';
-export let titleInput: HTMLInputElement | null = null;
+export let draftContent = '';
+export let titleInput: HTMLTextAreaElement | null = null;
+export let isTitleMultiline = false;
+export let onTitleInput: () => void = noop;
 export let isActive = false;
 export let isSelected = false;
 export let isPreviewed = false;
@@ -68,13 +70,15 @@ export let onSelect: () => void = noop;
 	<div class="flex min-w-0 flex-1 items-center gap-3">
 		<div class="flex min-w-0 flex-1 items-center gap-2">
 			{#if editing}
-				<input
+				<textarea
 					class="task-row__title-input"
-					bind:value={draftTitle}
+					bind:value={draftContent}
 					bind:this={titleInput}
 					on:blur={onCommitTitle}
 					on:keydown={onTitleKeydown}
-				/>
+					on:input={onTitleInput}
+					rows={isTitleMultiline ? 4 : 1}
+				></textarea>
 			{:else}
 				<button
 					type="button"

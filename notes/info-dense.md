@@ -18,7 +18,7 @@ _Last updated: October 19, 2025_
 - [ ] **Collapsible sidebar with floating timer** — Add a slide-out affordance to collapse the side panel; when collapsed, show a minimal floating timer popover that exposes start/pause, elapsed time, and quick re-open.
 
 ## Task Editing Experience
-- [ ] **Inline editable descriptions** — Replace the separate description surface with an inline Markdown editor inside each `TaskItem`, mirroring git commit UX (summary first line, optional body after a blank line).
+- [x] **Inline editable descriptions** — Replace the separate description surface with an inline Markdown editor inside each `TaskItem`, mirroring git commit UX (summary first line, optional body after a blank line). _Shipped October 19, 2025 — Shift+Enter turns the task title field into a multi-line commit-style editor; blur or ⏎ (no modifiers) commits, and the store splits the first line into title + body._
 - [ ] **Live Markdown rendering** — Provide instant preview for Markdown formatting (bold, lists, code) either via split view toggle or focus/blur transformation.
 - [ ] **Keyboard-first creation** — Introduce shortcuts for `new task`, `new sibling task`, `new subtask`, and quick indentation/outdent to mirror text-editor ergonomics.  
   _Design scope (drafted October 18, 2025)_  
