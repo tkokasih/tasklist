@@ -62,10 +62,13 @@
 - Extended helpers to aggregate entire task trees (returns normalized map) and aligned shared range types with `core/time.ts`.
 - Added preset range builders (`buildPresetRange`) and supporting utilities (start/end of day/week) in `src/lib/core/time.ts`.
 - Introduced project-level aggregation (`aggregateProjects`) and tightened status gating so archived tasks stay excluded by default.
+- Defined selector integration plan: introduce `src/lib/stores/reportingSelectors.ts` exporting a memoized `createTimeAggregationSelector(range, options)` that wraps `aggregateProjects`, caches by serialized range+option key, emits `{ range, totals, warnings }`, and respects a `REPORTING_ENABLED` flag for gradual rollout.
+- Landed `src/lib/stores/reportingSelectors.ts` with memoized selector factory, overlap warnings, and feature-flag guard, plus Vitest coverage (`src/lib/stores/reportingSelectors.test.ts`) validating caching, archived handling, and live updates.
+- Updated `vitest.config.ts` to stub `$app/environment` and map `$lib` during tests, enabling store modules to run in Node without SvelteKit globals.
 - Next focus: finalize selector design for consuming aggregates and wire instrumentation before store integration.
 
 ## Next Steps
 - Implement the tick instrumentation hook and capture the first 60-second sample, then update this note with observed numbers.
-- Design selector factory shape for `taskStore` integration, including memoization strategy and feature flag wiring.
-- Sketch how aggregated maps flow into reporting mode data structures to validate selector API requirements.
+- Sketch how aggregated maps flow into reporting mode data structures to validate selector API requirements and drive UI shape.
+- Wire instrumentation around the tick loop before integrating selectors into the main store.
 - Prepare lightweight mockups for reporting mode to align on column layout before Iteration 3 work.
