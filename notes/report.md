@@ -1,0 +1,53 @@
+# Reporting Roadmap
+
+## Vision
+- Surface time spent per task directly in the existing hierarchy so users can explore context, compare sibling tasks, and drill into subtasks without switching screens.
+- Allow flexible period breakdowns (daily/weekly/custom ranges) and ensure active timers update the aggregates in real time.
+- Provide export and sharing hooks (CSV, snapshot links) after in-app reporting is stable.
+
+## Guiding Constraints
+- Reuse the current task tree rendering path to avoid duplicating traversal logic or diverging UX.
+- Keep reporting lightweight enough to run in the browser without degrading main interactions; defer heavy calculations to background workers only if profiling indicates a need.
+- Maintain compatibility with LocalStorage persistence and snapshot import/export formats.
+
+## Incremental Delivery Plan
+- **Iteration 0 – Discovery & Instrumentation**
+  - Audit existing task/session data for edge cases (missing durations, overlapping sessions).
+  - Capture baseline performance metrics around `taskStore` ticks to monitor aggregation impact.
+  - Document decisions on archived tasks, timezone handling, and concurrent timers (resolve Open Questions where possible).
+- **Iteration 1 – Aggregation API**
+  - Extend `core/taskTree.ts` with pure aggregation helpers for configurable ranges (preset + custom start/end).
+  - Add `core/time.ts` utilities for generating standard ranges and formatting summed durations.
+  - Ship Vitest coverage for aggregation helpers and tick scenarios; guard by feature flag to keep UI untouched.
+- **Iteration 2 – Store Integration**
+  - Introduce memoized selectors in `stores/taskStore.ts` that expose aggregated results keyed by range configuration.
+  - Ensure selectors recompute incrementally when active sessions tick; profile with synthetic load to confirm no frame drops.
+  - Provide developer-facing story (Storybook sandbox or console demo) to validate data outputs before UI exposure.
+- **Iteration 3 – Reporting Mode UI (Beta)**
+  - Add a reporting toggle in the main toolbar or sidebar (`TaskTree` or `SidePanel`).
+  - Render additional time columns in the existing tree when reporting mode is active; keep expand/collapse behavior intact.
+  - Ship preset range selector (Today, This Week, Last 7 Days) and basic responsive styles in `src/app.css`.
+  - Roll out behind a user-facing beta flag to gather feedback without disrupting current workflows.
+- **Iteration 4 – Range Customization & Polish**
+  - Add custom date range picker and persist the selection via LocalStorage.
+  - Refine accessibility (focus order, column headers) and responsive scaling for narrower viewports.
+  - Capture QA checklist and regression cases for user acceptance.
+- **Iteration 5 – Exports & Summary Cards**
+  - Hook aggregated data into export pipeline (CSV/JSON) and add sidebar summary cards (top tasks, totals).
+  - Evaluate visual affordances (sparklines, progress bars) once text reporting is stable.
+  - Measure usage; decide on beta flag removal and GA criteria.
+
+## Validation & Release Strategy
+- Each iteration ends with `npm run check` + targeted Vitest suites; add integration smoke test once reporting mode renders.
+- Gate UI changes behind feature flags to allow internal QA before general availability.
+- Track performance budget (ms spent per tick) and error rates across releases to catch regressions.
+
+## Open Questions
+- Should archived or completed tasks appear by default in reporting mode, or require a filter toggle?
+- Do we need per-user timezone handling for teams, or is local browser time sufficient?
+- How should overlapping active sessions be handled if multiple tasks are started concurrently (possible via multi-window usage)?
+
+## Next Steps
+- Close out Iteration 0 by answering open questions and logging baseline metrics.
+- Draft aggregation helper API (Iteration 1) with corresponding tests.
+- Prepare lightweight mockups for reporting mode to align on column layout before Iteration 3 work.
