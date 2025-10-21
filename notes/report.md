@@ -61,10 +61,11 @@
 - Added Vitest coverage in `src/lib/core/reporting/timeBuckets.test.ts` verifying range clamping, status filters, and active-session detection.
 - Extended helpers to aggregate entire task trees (returns normalized map) and aligned shared range types with `core/time.ts`.
 - Added preset range builders (`buildPresetRange`) and supporting utilities (start/end of day/week) in `src/lib/core/time.ts`.
-- Next focus: expose tree-level aggregation entry point for multiple projects and design store selector interface.
+- Introduced project-level aggregation (`aggregateProjects`) and tightened status gating so archived tasks stay excluded by default.
+- Next focus: finalize selector design for consuming aggregates and wire instrumentation before store integration.
 
 ## Next Steps
 - Implement the tick instrumentation hook and capture the first 60-second sample, then update this note with observed numbers.
-- Extend aggregation helpers to support aggregating across projects and return combined maps keyed by task id.
 - Design selector factory shape for `taskStore` integration, including memoization strategy and feature flag wiring.
+- Sketch how aggregated maps flow into reporting mode data structures to validate selector API requirements.
 - Prepare lightweight mockups for reporting mode to align on column layout before Iteration 3 work.

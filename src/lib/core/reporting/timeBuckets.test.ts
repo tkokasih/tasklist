@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { Task, TaskSession } from '$lib/core/taskTypes';
+import type { Project, Task, TaskSession } from '$lib/core/taskTypes';
 import { buildPresetRange } from '../time';
-import { aggregateSessions, aggregateTaskTree, bucketSessionsForRange } from './timeBuckets';
+import { aggregateProjects, aggregateSessions, aggregateTaskTree, bucketSessionsForRange } from './timeBuckets';
 
 const iso = (date: string, time: string) => `${date}T${time}.000Z`;
 
@@ -134,5 +134,55 @@ describe('aggregateTaskTree', () => {
 		expect(result.taskTotals.size).toBe(2);
 		expect(result.taskTotals.get('parent')?.totalMs).toBe(60 * 60 * 1000);
 		expect(result.taskTotals.get('child')?.totalMs).toBe(2 * 60 * 60 * 1000);
+	});
+});
+
+describe('aggregateProjects', () => {
+	const makeProject = (id: string, tasks: Task[]): Project => ({
+		id,
+		title: `Project ${id}`,
+		description: undefined,
+		tasks,
+		createdAt: iso('2024-01-01', '00:00:00'),
+		updatedAt: iso('2024-01-01', '00:00:00')
+	});
+
+	it('aggregates tasks across multiple projects while respecting options', () => {
+		const sharedRange = buildPresetRange('today', {
+			nowFactory: () => new Date(iso('2024-01-03', '12:00:00'))
+		});
+
+		const projectA = makeProject('A', [
+			{
+				id: 'task-a1',
+				title: 'Task A1',
+				status: 'completed',
+				sessions: [
+					createSession(iso('2024-01-03', '09:00:00'), iso('2024-01-03', '10:00:00'), 60 * 60 * 1000),
+					createSession(iso('2024-01-02', '11:00:00'), iso('2024-01-02', '12:00:00'), 60 * 60 * 1000)
+				],
+				children: [],
+				timeSpentMs: 2 * 60 * 60 * 1000,
+				createdAt: iso('2024-01-01', '00:00:00'),
+				updatedAt: iso('2024-01-01', '00:00:00')
+			}
+		]);
+
+		const projectB = makeProject('B', [
+			{
+				...createTask(
+					[createSession(iso('2024-01-03', '08:30:00'), iso('2024-01-03', '09:30:00'), 60 * 60 * 1000)],
+					'archived'
+				),
+				id: 'task-b1'
+			}
+		]);
+
+		const defaultResult = aggregateProjects([projectA, projectB], sharedRange);
+		expect(defaultResult.taskTotals.get('task-a1')?.totalMs).toBe(60 * 60 * 1000);
+		expect(defaultResult.taskTotals.get('task-b1')).toBeUndefined();
+
+		const includeArchived = aggregateProjects([projectA, projectB], sharedRange, { includeArchived: true });
+		expect(includeArchived.taskTotals.get('task-b1')?.totalMs).toBe(60 * 60 * 1000);
 	});
 });

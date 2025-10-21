@@ -1,4 +1,4 @@
-import type { Task, TaskSession } from '$lib/core/taskTypes';
+import type { Project, Task, TaskSession } from '$lib/core/taskTypes';
 import type { TimeRangeConfig } from '../time';
 
 export interface AggregationOptions {
@@ -18,6 +18,20 @@ export interface AggregationResult {
 	taskTotals: Map<string, SessionAggregation>;
 }
 
+const shouldIncludeTask = (task: Task, options: AggregationOptions) => {
+	const { includeArchived = false, includeCompleted = true } = options;
+
+	if (task.status === 'archived' && !includeArchived) {
+		return false;
+	}
+
+	if (task.status === 'completed' && !includeCompleted) {
+		return false;
+	}
+
+	return true;
+};
+
 export const aggregateTaskTree = (
 	root: Task,
 	range: TimeRangeConfig,
@@ -26,6 +40,10 @@ export const aggregateTaskTree = (
 	const taskTotals = new Map<string, SessionAggregation>();
 
 	const walk = (task: Task) => {
+		if (!shouldIncludeTask(task, options)) {
+			return;
+		}
+
 		const aggregation = bucketSessionsForRange(task, range, options);
 		taskTotals.set(task.id, aggregation);
 
@@ -38,20 +56,50 @@ export const aggregateTaskTree = (
 	return { range, taskTotals };
 };
 
+export const aggregateProjects = (
+	projects: Project[],
+	range: TimeRangeConfig,
+	options: AggregationOptions = {}
+): AggregationResult => {
+	const taskTotals = new Map<string, SessionAggregation>();
+
+	for (const project of projects) {
+		for (const task of project.tasks ?? []) {
+			const subtree = aggregateTaskTree(task, range, options);
+			for (const [taskId, aggregation] of subtree.taskTotals) {
+				const existing = taskTotals.get(taskId);
+				if (!existing) {
+					taskTotals.set(taskId, aggregation);
+					continue;
+				}
+
+				taskTotals.set(taskId, {
+					taskId,
+					totalMs: existing.totalMs + aggregation.totalMs,
+					buckets: mergeBuckets(existing.buckets, aggregation.buckets),
+					activeOverlapDetected: existing.activeOverlapDetected || aggregation.activeOverlapDetected
+				});
+			}
+		}
+	}
+
+	return { range, taskTotals };
+};
+
+const mergeBuckets = (a: Record<string, number>, b: Record<string, number>) => {
+	const combined: Record<string, number> = { ...a };
+	for (const [bucket, value] of Object.entries(b)) {
+		combined[bucket] = (combined[bucket] ?? 0) + value;
+	}
+	return combined;
+};
+
 export const bucketSessionsForRange = (
 	task: Task,
 	range: TimeRangeConfig,
 	options: AggregationOptions = {}
 ): SessionAggregation => {
-	const { includeArchived = false, includeCompleted = true } = options;
-	const allowStatus =
-		task.status !== 'archived' || includeArchived
-			? task.status !== 'completed' || includeCompleted
-				? true
-				: false
-			: false;
-
-	if (!allowStatus) {
+	if (!shouldIncludeTask(task, options)) {
 		return {
 			taskId: task.id,
 			totalMs: 0,
