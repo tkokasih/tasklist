@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.base.json",
+  "include": ["src/**/*", "vite.config.ts"],
+  "compilerOptions": {
+    "types": ["svelte"],
+    "moduleResolution": "node",
+    "module": "esnext",
+    "target": "esnext",
+    "importsNotUsedAsValues": "error",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": false,
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "paths": {
+      "$lib/*": ["src/lib/*"],
+      "$components/*": ["src/lib/components/*"]
+    }
+  }
+}
