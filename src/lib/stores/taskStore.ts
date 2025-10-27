@@ -11,11 +11,13 @@ import {
 	incrementTaskTime,
 	locateTask,
 	moveTask,
+	deleteTaskSession as deleteTaskSessionInTree,
 	indentTask as indentTaskInTree,
 	outdentTask as outdentTaskInTree,
 	removeTaskById,
 	setTaskStatus,
 	updateTaskById,
+	updateTaskSession as updateTaskSessionInTree,
 	DEFAULT_STATUS_FILTERS
 } from '$lib/core/taskTree';
 import {
@@ -124,6 +126,46 @@ const normalizeProjects = (projects: TaskData['projects']): TaskData['projects']
 		...project,
 		tasks: Array.isArray(project.tasks) ? project.tasks.map((task) => normalizeTask(task)) : []
 	}));
+
+export type SessionMutationFailureReason =
+	| 'task-active'
+	| 'task-missing'
+	| 'session-missing'
+	| 'invalid-start'
+	| 'invalid-end'
+	| 'invalid-range'
+	| 'invalid-duration'
+	| 'no-change';
+
+export type SessionMutationResult = { ok: true } | { ok: false; reason: SessionMutationFailureReason };
+
+interface SessionEditPayload {
+	startedAt?: string;
+	endedAt?: string | null;
+	durationMs?: number;
+}
+
+const parseTimestamp = (value: string | null | undefined): number | null => {
+	if (!value) {
+		return null;
+	}
+
+	const timestamp = Date.parse(value);
+	if (Number.isNaN(timestamp)) {
+		return null;
+	}
+
+	return timestamp;
+};
+
+const normalizeIsoString = (value: string | null | undefined): string | null => {
+	const timestamp = parseTimestamp(value);
+	if (timestamp === null) {
+		return null;
+	}
+
+	return new Date(timestamp).toISOString();
+};
 
 interface TaskStoreState {
 	data: TaskData;
@@ -537,6 +579,114 @@ export const taskStore = {
 
 			return { ...data, projects };
 		});
+	},
+
+	updateSession(taskId: string, sessionId: string, updates: SessionEditPayload): SessionMutationResult {
+		let outcome: SessionMutationResult = { ok: false, reason: 'no-change' };
+
+		withDataUpdate((data) => {
+			if (data.activeTaskId === taskId) {
+				outcome = { ok: false, reason: 'task-active' };
+				return data;
+			}
+
+			const located = locateTask(data.projects, taskId);
+			if (!located) {
+				outcome = { ok: false, reason: 'task-missing' };
+				return data;
+			}
+
+			const targetSession = located.task.sessions.find((session) => session.id === sessionId);
+			if (!targetSession) {
+				outcome = { ok: false, reason: 'session-missing' };
+				return data;
+			}
+
+			const startIso = normalizeIsoString(updates.startedAt ?? targetSession.startedAt);
+			if (!startIso) {
+				outcome = { ok: false, reason: 'invalid-start' };
+				return data;
+			}
+
+			const endedAtSource = Object.prototype.hasOwnProperty.call(updates, 'endedAt')
+				? updates.endedAt
+				: targetSession.endedAt;
+			const endIso = normalizeIsoString(endedAtSource ?? undefined);
+			if (endedAtSource && !endIso) {
+				outcome = { ok: false, reason: 'invalid-end' };
+				return data;
+			}
+
+			const startMs = Date.parse(startIso);
+			let durationMs = targetSession.durationMs;
+
+			if (endIso) {
+				const endMs = Date.parse(endIso);
+				if (Number.isNaN(endMs) || endMs < startMs) {
+					outcome = { ok: false, reason: 'invalid-range' };
+					return data;
+				}
+				durationMs = endMs - startMs;
+			} else if (typeof updates.durationMs === 'number') {
+				if (!Number.isFinite(updates.durationMs) || updates.durationMs < 0) {
+					outcome = { ok: false, reason: 'invalid-duration' };
+					return data;
+				}
+				durationMs = updates.durationMs;
+			}
+
+			const sessionPayload: TaskSession = {
+				...targetSession,
+				startedAt: startIso,
+				endedAt: endIso ?? undefined,
+				durationMs: Math.max(0, Math.round(durationMs))
+			};
+
+			const { projects, changed } = updateTaskSessionInTree(data.projects, taskId, sessionId, sessionPayload);
+			if (!changed) {
+				outcome = { ok: false, reason: 'no-change' };
+				return data;
+			}
+
+			outcome = { ok: true };
+			return { ...data, projects };
+		});
+
+		return outcome;
+	},
+
+	deleteSession(taskId: string, sessionId: string): SessionMutationResult {
+		let outcome: SessionMutationResult = { ok: false, reason: 'no-change' };
+
+		withDataUpdate((data) => {
+			if (data.activeTaskId === taskId) {
+				outcome = { ok: false, reason: 'task-active' };
+				return data;
+			}
+
+			const located = locateTask(data.projects, taskId);
+			if (!located) {
+				outcome = { ok: false, reason: 'task-missing' };
+				return data;
+			}
+
+			const hasSession = located.task.sessions.some((session) => session.id === sessionId);
+			if (!hasSession) {
+				outcome = { ok: false, reason: 'session-missing' };
+				return data;
+			}
+
+			const { projects, changed } = deleteTaskSessionInTree(data.projects, taskId, sessionId);
+			if (!changed) {
+				outcome = { ok: false, reason: 'no-change' };
+				return data;
+			}
+
+			outcome = { ok: true };
+			return { ...data, projects };
+		});
+
+		return outcome;
 	},
 
 	startTask(taskId: string) {

@@ -491,6 +491,46 @@ const ensureSessions = (task: Task): TaskSession[] => {
 	return [];
 };
 
+const cloneSessions = (sessions: TaskSession[]): TaskSession[] => sessions.map((session) => ({ ...session }));
+
+const sanitizeSession = (session: TaskSession, fallback: TaskSession): TaskSession => ({
+	id: typeof session.id === 'string' && session.id.length > 0 ? session.id : fallback.id,
+	startedAt: typeof session.startedAt === 'string' ? session.startedAt : fallback.startedAt,
+	endedAt:
+		typeof session.endedAt === 'string'
+			? session.endedAt
+			: typeof fallback.endedAt === 'string'
+				? fallback.endedAt
+				: undefined,
+	durationMs:
+		typeof session.durationMs === 'number' && Number.isFinite(session.durationMs)
+			? Math.max(0, session.durationMs)
+			: Math.max(0, fallback.durationMs)
+});
+
+const finalizeTaskSessions = (task: Task, sessions: TaskSession[]): Task => {
+	const normalized = sessions.map((session) => ({
+		...session,
+		durationMs: Math.max(0, session.durationMs)
+	}));
+
+	normalized.sort((a, b) => {
+		const aTime = typeof a.startedAt === 'string' ? a.startedAt : '';
+		const bTime = typeof b.startedAt === 'string' ? b.startedAt : '';
+		return aTime.localeCompare(bTime);
+	});
+
+	const total = normalized.reduce((sum, current) => sum + current.durationMs, 0);
+	const lastSession = normalized.at(-1) ?? null;
+
+	return {
+		...task,
+		sessions: normalized,
+		timeSpentMs: Math.max(0, total),
+		lastStartedAt: lastSession?.startedAt
+	};
+};
+
 const startNewSession = (sessions: TaskSession[], startedAt: string): TaskSession[] => [
 	...sessions,
 	{
@@ -595,6 +635,46 @@ export const incrementTaskTime = (
 			};
 		})()
 	}));
+
+export const updateTaskSession = (
+	projects: Project[],
+	taskId: string,
+	sessionId: string,
+	nextSession: TaskSession
+): { projects: Project[]; changed: boolean } =>
+	updateTaskById(projects, taskId, (task) => {
+		const sessions = ensureSessions(task);
+		const index = sessions.findIndex((session) => session.id === sessionId);
+		if (index === -1) {
+			return task;
+		}
+
+		const current = sessions[index];
+		const sanitized = sanitizeSession(nextSession, current);
+		const updatedSessions = cloneSessions(sessions);
+		updatedSessions[index] = sanitized;
+
+		return finalizeTaskSessions(task, updatedSessions);
+	});
+
+export const deleteTaskSession = (
+	projects: Project[],
+	taskId: string,
+	sessionId: string
+): { projects: Project[]; changed: boolean } =>
+	updateTaskById(projects, taskId, (task) => {
+		const sessions = ensureSessions(task);
+		if (sessions.length === 0) {
+			return task;
+		}
+
+		const nextSessions = sessions.filter((session) => session.id !== sessionId);
+		if (nextSessions.length === sessions.length) {
+			return task;
+		}
+
+		return finalizeTaskSessions(task, nextSessions);
+	});
 
 export const flattenTasks = (projects: Project[]): LocatedTask[] => {
 	const items: LocatedTask[] = [];

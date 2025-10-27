@@ -7,12 +7,14 @@ import {
 	createProject,
 	createSnapshot,
 	createTask,
+	deleteTaskSession,
 	flattenTasks,
 	incrementTaskTime,
 	locateTask,
 	moveTask,
 	setTaskStatus,
-	updateTaskById
+	updateTaskById,
+	updateTaskSession
 } from './taskTree';
 import type { Project, Task } from './taskTypes';
 
@@ -223,9 +225,88 @@ describe('taskTree core helpers', () => {
 		expect(incremented.projects[0].tasks[0].sessions[0].durationMs).toBe(2000);
 
 		vi.setSystemTime(new Date(laterTime));
-		const paused = setTaskStatus(incremented.projects, 'task-root', 'paused');
-		const pausedTask = paused.projects[0].tasks[0];
-		expect(pausedTask.sessions[0].endedAt).toBe(laterTime);
+	const paused = setTaskStatus(incremented.projects, 'task-root', 'paused');
+	const pausedTask = paused.projects[0].tasks[0];
+	expect(pausedTask.sessions[0].endedAt).toBe(laterTime);
+});
+
+	it('updates a task session and recalculates totals', () => {
+		const sessionId = 'session-1';
+		const project = createProject('Tracked', {
+			id: 'project-1',
+			createdAt: baseTime,
+			updatedAt: baseTime,
+			tasks: [
+				createTask('Tracked task', {
+					id: 'task-1',
+					createdAt: baseTime,
+					updatedAt: baseTime,
+					timeSpentMs: 30 * 60 * 1000,
+					sessions: [
+						{
+							id: sessionId,
+							startedAt: baseTime,
+							endedAt: '2024-01-01T10:30:00.000Z',
+							durationMs: 30 * 60 * 1000
+						}
+					]
+				})
+			]
+		});
+
+		const result = updateTaskSession([project], 'task-1', sessionId, {
+			id: sessionId,
+			startedAt: baseTime,
+			endedAt: '2024-01-01T10:45:00.000Z',
+			durationMs: 45 * 60 * 1000
+		});
+
+		expect(result.changed).toBe(true);
+		const updatedTask = locateTask(result.projects, 'task-1')?.task;
+		expect(updatedTask?.sessions).toHaveLength(1);
+		expect(updatedTask?.sessions[0].durationMs).toBe(45 * 60 * 1000);
+		expect(updatedTask?.timeSpentMs).toBe(45 * 60 * 1000);
+		expect(updatedTask?.lastStartedAt).toBe(baseTime);
+	});
+
+	it('deletes a task session and updates aggregates', () => {
+		const project = createProject('Tracked', {
+			id: 'project-1',
+			createdAt: baseTime,
+			updatedAt: baseTime,
+			tasks: [
+				createTask('Tracked task', {
+					id: 'task-1',
+					createdAt: baseTime,
+					updatedAt: baseTime,
+					timeSpentMs: 90 * 60 * 1000,
+					lastStartedAt: laterTime,
+					sessions: [
+						{
+							id: 'session-1',
+							startedAt: baseTime,
+							endedAt: '2024-01-01T10:15:00.000Z',
+							durationMs: 15 * 60 * 1000
+						},
+						{
+							id: 'session-2',
+							startedAt: '2024-01-02T12:00:00.000Z',
+							endedAt: laterTime,
+							durationMs: 75 * 60 * 1000
+						}
+					]
+				})
+			]
+		});
+
+		const result = deleteTaskSession([project], 'task-1', 'session-1');
+
+		expect(result.changed).toBe(true);
+		const updatedTask = locateTask(result.projects, 'task-1')?.task;
+		expect(updatedTask?.sessions).toHaveLength(1);
+		expect(updatedTask?.sessions[0].id).toBe('session-2');
+		expect(updatedTask?.timeSpentMs).toBe(75 * 60 * 1000);
+		expect(updatedTask?.lastStartedAt).toBe('2024-01-02T12:00:00.000Z');
 	});
 
 	it('flattens projects into located task list', () => {

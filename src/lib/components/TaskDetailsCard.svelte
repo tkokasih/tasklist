@@ -1,29 +1,31 @@
 <script lang="ts">
 	import CollapsibleCard from './CollapsibleCard.svelte';
+	import TaskSessionList from './TaskSessionList.svelte';
 	import { selectedTask } from '$lib/stores/taskStore';
 	import { formatDuration, formatTimestamp } from '$lib/core/time';
-	import type { TaskStatus } from '$lib/core/taskTypes';
+	import type { Task, TaskStatus } from '$lib/core/taskTypes';
 
 	const statusLabels: Record<TaskStatus, string> = {
 		archived: 'Archived',
 		completed: 'Completed',
 		idle: 'Idle',
 		'in-progress': 'In progress',
-	paused: 'Paused'
-};
+		paused: 'Paused'
+	};
 
-const statusStyles: Record<TaskStatus, string> = {
-	archived: 'task-row__status--archived',
-	completed: 'task-row__status--completed',
-	idle: 'task-row__status--idle',
-	'in-progress': 'task-row__status--active',
-	paused: 'task-row__status--paused'
-};
+	const statusStyles: Record<TaskStatus, string> = {
+		archived: 'task-row__status--archived',
+		completed: 'task-row__status--completed',
+		idle: 'task-row__status--idle',
+		'in-progress': 'task-row__status--active',
+		paused: 'task-row__status--paused'
+	};
 
-const formatOptionalTimestamp = (value: string | undefined) =>
-	value ? formatTimestamp(value) : '—';
+	const formatOptionalTimestamp = (value: string | undefined) => (value ? formatTimestamp(value) : '—');
 
-$: task = $selectedTask;
+	let task: Task | null = null;
+
+	$: task = $selectedTask;
 </script>
 
 <CollapsibleCard title="Task Details" subtitle="Focus on a task to inspect it">
@@ -72,6 +74,7 @@ $: task = $selectedTask;
 					<dd class="mt-1 text-slate-700">{formatOptionalTimestamp(task.archivedAt)}</dd>
 				</div>
 			</dl>
+			<TaskSessionList {task} />
 		</div>
 	{:else}
 		<p class="text-sm text-slate-500">
