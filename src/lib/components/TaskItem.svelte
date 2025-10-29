@@ -255,6 +255,43 @@
     }
 
     if (
+      event.altKey &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.shiftKey &&
+      (event.key === "ArrowRight" ||
+        event.key === "ArrowLeft" ||
+        event.key === "ArrowUp" ||
+        event.key === "ArrowDown")
+    ) {
+      event.preventDefault();
+      const wasEditingBeforeShortcut = editing;
+      const committed = commitTaskContent();
+      if (!committed) {
+        if (wasEditingBeforeShortcut) {
+          editing = true;
+        }
+        return;
+      }
+
+      if (event.key === "ArrowRight") {
+        taskStore.indentTask(task.id);
+      } else if (event.key === "ArrowLeft") {
+        taskStore.outdentTask(task.id);
+      } else if (event.key === "ArrowUp") {
+        taskStore.moveTaskUp(task.id);
+      } else {
+        taskStore.moveTaskDown(task.id);
+      }
+
+      if (wasEditingBeforeShortcut) {
+        taskStore.focusTaskEditor(task.id);
+      }
+
+      return;
+    }
+
+    if (
       event.key === "Tab" &&
       !event.metaKey &&
       !event.ctrlKey &&
