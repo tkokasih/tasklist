@@ -1,9 +1,16 @@
 <script lang="ts">
-import { DEFAULT_STATUS_FILTERS } from '$lib/core/taskTree';
-import type { TaskStatus } from '$lib/core/taskTypes';
-import { ALL_STATUS_VALUES, statusFilters, taskStore } from '$lib/stores/taskStore';
+	import { DEFAULT_STATUS_FILTERS } from '$lib/core/taskTree';
+	import type { TaskStatus } from '$lib/core/taskTypes';
+	import { ALL_STATUS_VALUES, statusFilters, taskStore } from '$lib/stores/taskStore';
+	import {
+		reportingMode,
+		reportingPreset,
+		REPORTING_PRESETS,
+		setReportingMode,
+		setReportingPreset
+	} from '$lib/stores/uiState';
 
-const clone = <T>(values: Iterable<T>): T[] => Array.from(values);
+	const clone = <T>(values: Iterable<T>): T[] => Array.from(values);
 
 	const STATUS_PRESETS: Array<{
 		id: string;
@@ -37,18 +44,13 @@ const clone = <T>(values: Iterable<T>): T[] => Array.from(values);
 		}
 	];
 
-	const timeWindows = [
-		{ label: 'Any time', active: true },
-		{ label: 'Past week', active: false },
-		{ label: 'Past month', active: false }
-	];
-
 	$: statusSummary = (() => {
 		if ($statusFilters.length === 0) {
 			return 'No statuses';
 		}
 		for (const preset of STATUS_PRESETS) {
-			const matches = preset.statuses.length === $statusFilters.length &&
+			const matches =
+				preset.statuses.length === $statusFilters.length &&
 				preset.statuses.every((status) => $statusFilters.includes(status));
 			if (matches) {
 				return `${preset.label} tasks`;
@@ -81,6 +83,48 @@ const clone = <T>(values: Iterable<T>): T[] => Array.from(values);
 		</div>
 	</div>
 
+	<div class="flex flex-wrap items-center gap-2">
+		<span class="text-xs uppercase tracking-wide text-slate-400">Reporting</span>
+		<button
+			type="button"
+			class={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold transition ${
+				$reportingMode
+					? 'border-blue-500 bg-blue-50 text-blue-600 hover:bg-blue-100'
+					: 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100'
+			}`}
+			on:click={() => setReportingMode(!$reportingMode)}
+			aria-pressed={$reportingMode}
+		>
+			<span class="inline-flex h-5 w-9 items-center rounded-full bg-slate-200 p-0.5 transition-all">
+				<span
+					class={`block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+						$reportingMode ? 'translate-x-4 bg-blue-500' : ''
+					}`}
+				></span>
+			</span>
+			<span>{$reportingMode ? 'On' : 'Off'}</span>
+		</button>
+
+		{#if $reportingMode}
+			<div class="flex overflow-hidden rounded-full border border-slate-200 bg-white shadow-inner shadow-slate-200/50">
+				{#each REPORTING_PRESETS as preset}
+					{@const selected = preset.id === $reportingPreset}
+					<button
+						type="button"
+						class={`px-3 py-1 text-xs font-medium transition-colors ${
+							selected ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
+						}`}
+						on:click={() => setReportingPreset(preset.id)}
+						aria-pressed={selected}
+						title={preset.description}
+					>
+						{preset.label}
+					</button>
+				{/each}
+			</div>
+		{/if}
+	</div>
+
 	<div class="flex items-center gap-2">
 		<button
 			type="button"
@@ -92,21 +136,6 @@ const clone = <T>(values: Iterable<T>): T[] => Array.from(values);
 				<path d="M3 4L6 7L9 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
 			</svg>
 		</button>
-
-		<div class="flex items-center gap-2">
-			<span class="text-xs uppercase tracking-wide text-slate-400">Time</span>
-			<div class="flex overflow-hidden rounded-full border border-slate-200 bg-white shadow-inner shadow-slate-200/50">
-				{#each timeWindows as window}
-					<button
-						type="button"
-						class={`px-3 py-1 text-xs font-medium transition-colors ${window.active ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
-						aria-pressed={window.active}
-					>
-						{window.label}
-					</button>
-				{/each}
-			</div>
-		</div>
 	</div>
 
 	<div class="flex items-center gap-2">

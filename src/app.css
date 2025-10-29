@@ -106,9 +106,9 @@
 			@apply flex flex-wrap items-center gap-2 text-[11px] font-medium text-slate-600;
 		}
 
-		.task-row__actions {
-			@apply flex flex-wrap items-center justify-end gap-1 text-xs font-semibold;
-		}
+	.task-row__actions {
+		@apply flex flex-wrap items-center justify-end gap-1 text-xs font-semibold;
+	}
 
 	.task-row__action {
 		@apply inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300;
@@ -140,6 +140,70 @@
 
 	.task-row--archived .task-row__action {
 		@apply border-slate-300 text-slate-400 hover:bg-slate-200;
+	}
+
+	.task-row__reporting {
+		@apply flex flex-wrap items-stretch justify-end gap-1 text-[11px] font-semibold text-slate-600;
+	}
+
+	.task-row__reporting-column {
+		@apply flex min-w-[4.5rem] flex-col items-center justify-center rounded-md border border-slate-200 bg-white/80 px-2 py-1 text-center shadow-inner;
+	}
+
+	.task-row__reporting-column--today {
+		@apply border-blue-300 bg-blue-50 text-blue-700;
+	}
+
+	.task-row__reporting-column--weekend {
+		@apply border-slate-300 bg-slate-100 text-slate-600;
+	}
+
+	.task-row__reporting-column-value {
+		@apply text-sm text-slate-700;
+	}
+
+	.task-row__reporting-empty {
+		@apply rounded-md border border-dashed border-slate-300 bg-white/60 px-3 py-1 text-xs text-slate-500;
+	}
+
+	.task-tree__header {
+		@apply flex min-h-[3rem] items-center justify-between rounded-md border border-transparent px-3 py-1.5 text-xs uppercase tracking-wide text-slate-400;
+	}
+
+	.task-tree__header-label {
+		@apply text-[11px] font-semibold text-slate-500;
+	}
+
+	.task-tree__header-columns {
+		@apply flex flex-wrap items-center justify-end gap-1 text-[11px] font-semibold;
+	}
+
+	.task-tree__header-columns--inactive {
+		@apply opacity-10;
+	}
+
+	.task-tree__header-column {
+		@apply flex min-w-[4.5rem] flex-col items-center justify-center rounded-md border border-transparent bg-transparent px-2 py-1 text-center;
+	}
+
+	.task-tree__header-column--today {
+		@apply border-blue-300 bg-blue-50 text-blue-700;
+	}
+
+	.task-tree__header-column--weekend {
+		@apply border-slate-200 bg-slate-100 text-slate-600;
+	}
+
+	.task-tree__header-column--empty {
+		@apply border border-dashed border-slate-300 bg-white/60 px-3 py-1 text-slate-500;
+	}
+
+	.task-tree__header-column-day {
+		@apply text-[10px] font-semibold;
+	}
+
+	.task-tree__header-column-date {
+		@apply text-[11px] font-medium;
 	}
 
 	.task-row:hover:not(.task-row--active):not(.task-row--preview):not(.task-row--selected):not(.task-row--completed):not(.task-row--archived),

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Task, TaskSession } from '$lib/core/taskTypes';
 	import { formatDuration } from '$lib/core/time';
+	import type { ReportingColumnDefinition } from '$lib/stores/uiState';
 
 	const noop = () => {};
 
@@ -51,6 +52,10 @@ export let onComplete: () => void = noop;
 export let onOpenSubtaskForm: () => void = noop;
 export let onTitleKeydown: (event: KeyboardEvent) => void = noop;
 export let onSelect: () => void = noop;
+export let reportingMode = false;
+export let reportingColumns: ReportingColumnDefinition[] = [];
+
+const placeholderDuration = '—';
 </script>
 
 <div
@@ -120,70 +125,90 @@ export let onSelect: () => void = noop;
 			</div>
 		</div>
 
-		<div class="task-row__actions">
-			<button
-				class={`task-row__action task-row__action--primary ${isActive ? 'is-active' : ''}`}
-				type="button"
-				on:click={onStartOrPause}
-			>
-				{#if isActive}
-					<span aria-hidden="true">⏸</span>
-					<span class="hidden sm:inline">Pause</span>
-					<span class="sr-only sm:hidden">Pause task</span>
-				{:else}
-					<span aria-hidden="true">▶</span>
-					<span class="hidden sm:inline">Play</span>
-					<span class="sr-only sm:hidden">Start task</span>
-				{/if}
-			</button>
-
-			<button
-				class="task-row__action task-row__action--success"
-				type="button"
-				on:click={onComplete}
-			>
-				<span aria-hidden="true">✔</span>
-				<span class="sr-only sm:hidden">Complete task</span>
-				<span class="hidden sm:inline">Done</span>
-			</button>
-
-			<button
-				class="task-row__action task-row__action--ghost"
-				type="button"
-				on:click={onOpenSubtaskForm}
-			>
-				<span aria-hidden="true">＋</span>
-				<span class="sr-only sm:hidden">Add sub-task</span>
-				<span class="hidden sm:inline">Subtask</span>
-			</button>
-
-			<button
-				class="task-row__action task-row__action--ghost"
-				type="button"
-				on:click={onArchive}
-			>
-				<span aria-hidden="true">🗃</span>
-				<span class="sr-only sm:hidden">Archive task</span>
-				<span class="hidden sm:inline">Archive</span>
-			</button>
-
-			<button
-				class="task-row__action task-row__action--ghost"
-				type="button"
-				on:click={onMoveUp}
-				aria-label="Move task up"
-			>
-				↑
-			</button>
-
-			<button
-				class="task-row__action task-row__action--ghost"
-				type="button"
-				on:click={onMoveDown}
-				aria-label="Move task down"
-			>
-				↓
-			</button>
+	{#if reportingMode}
+		<div class="task-row__reporting" role="group" aria-label="Daily reporting breakdown">
+			{#if reportingColumns.length === 0}
+				<span class="task-row__reporting-empty">No reporting columns</span>
+			{:else}
+				{#each reportingColumns as column (column.id)}
+					<div
+						class={`task-row__reporting-column ${
+							column.isToday ? 'task-row__reporting-column--today' : ''
+						} ${column.isWeekend ? 'task-row__reporting-column--weekend' : ''}`}
+						aria-label={column.label}
+					>
+						<span class="sr-only">{column.label}</span>
+						<span class="task-row__reporting-column-value">{placeholderDuration}</span>
+					</div>
+				{/each}
+			{/if}
 		</div>
+	{:else}
+			<div class="task-row__actions">
+				<button
+					class={`task-row__action task-row__action--primary ${isActive ? 'is-active' : ''}`}
+					type="button"
+					on:click={onStartOrPause}
+				>
+					{#if isActive}
+						<span aria-hidden="true">⏸</span>
+						<span class="hidden sm:inline">Pause</span>
+						<span class="sr-only sm:hidden">Pause task</span>
+					{:else}
+						<span aria-hidden="true">▶</span>
+						<span class="hidden sm:inline">Play</span>
+						<span class="sr-only sm:hidden">Start task</span>
+					{/if}
+				</button>
+
+				<button
+					class="task-row__action task-row__action--success"
+					type="button"
+					on:click={onComplete}
+				>
+					<span aria-hidden="true">✔</span>
+					<span class="sr-only sm:hidden">Complete task</span>
+					<span class="hidden sm:inline">Done</span>
+				</button>
+
+				<button
+					class="task-row__action task-row__action--ghost"
+					type="button"
+					on:click={onOpenSubtaskForm}
+				>
+					<span aria-hidden="true">＋</span>
+					<span class="sr-only sm:hidden">Add sub-task</span>
+					<span class="hidden sm:inline">Subtask</span>
+				</button>
+
+				<button
+					class="task-row__action task-row__action--ghost"
+					type="button"
+					on:click={onArchive}
+				>
+					<span aria-hidden="true">🗃</span>
+					<span class="sr-only sm:hidden">Archive task</span>
+					<span class="hidden sm:inline">Archive</span>
+				</button>
+
+				<button
+					class="task-row__action task-row__action--ghost"
+					type="button"
+					on:click={onMoveUp}
+					aria-label="Move task up"
+				>
+					↑
+				</button>
+
+				<button
+					class="task-row__action task-row__action--ghost"
+					type="button"
+					on:click={onMoveDown}
+					aria-label="Move task down"
+				>
+					↓
+				</button>
+			</div>
+		{/if}
 	</div>
 </div>

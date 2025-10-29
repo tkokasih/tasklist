@@ -47,8 +47,12 @@
 - [ ] **Iteration 3 – Reporting Mode UI (Beta)** — _Planned._
   - Add a reporting toggle in the main toolbar or sidebar (`TaskTree` or `SidePanel`).
   - Render additional time columns in the existing tree when reporting mode is active; keep expand/collapse behavior intact.
-  - Ship preset range selector (Today, This Week, Last 7 Days) and basic responsive styles in `src/app.css`.
+  - Ship preset range selector (This Week, Last 7 Days) and basic responsive styles in `src/app.css`.
   - Roll out behind a user-facing beta flag to gather feedback without disrupting current workflows.
+  - _Progress update (October 29, 2025)_
+    - Introduced a reporting mode toggle in the ribbon wired through a new `uiState` store, enabling global access without touching persisted task data.
+    - Swapped the task action cluster for placeholder daily columns when reporting mode is active; `Last 7 days` now emits seven columns so layout expectations are set.
+    - Removed the “Today” preset from UI controls to focus on trailing-week and calendar-week breakdowns.
 - [ ] **Iteration 4 – Range Customization & Polish** — _Planned._
   - Add custom date range picker and persist the selection via LocalStorage.
   - Refine accessibility (focus order, column headers) and responsive scaling for narrower viewports.

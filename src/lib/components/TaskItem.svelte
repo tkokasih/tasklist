@@ -4,9 +4,12 @@
 	import { formatTimestamp } from '$lib/core/time';
 	import { taskStore } from '$lib/stores/taskStore';
 	import TaskRowSummary from './TaskRowSummary.svelte';
+	import type { ReportingColumnDefinition } from '$lib/stores/uiState';
 
 	export let task: Task;
 	export let depth = 0;
+	export let reportingMode = false;
+	export let reportingColumns: ReportingColumnDefinition[] = [];
 
 	let expanded = true;
 	let editing = false;
@@ -265,6 +268,8 @@ const handleMoveUp = () => {
 		{isPreviewed}
 		{latestSession}
 		{activeSessionElapsed}
+		{reportingMode}
+		{reportingColumns}
 		onSelect={selectTask}
 		onToggleExpand={toggleExpand}
 		onStartOrPause={handleStartOrPause}
@@ -328,7 +333,12 @@ const handleMoveUp = () => {
 	{#if expanded && task.children.length > 0}
 		<div class="space-y-1 border-l border-slate-200 pl-5">
 			{#each task.children as child (child.id)}
-				<svelte:self task={child} depth={depth + 1} />
+				<svelte:self
+					task={child}
+					depth={depth + 1}
+					reportingMode={reportingMode}
+					reportingColumns={reportingColumns}
+				/>
 			{/each}
 		</div>
 	{/if}

@@ -46,27 +46,27 @@
 	let editEndValue = '';
 	let editingError: string | null = null;
 	let notice: NoticeState = null;
-	let noticeTimeout: ReturnType<typeof setTimeout> | null = null;
+let noticeTimeout: ReturnType<typeof setTimeout> | null = null;
 	let lastTaskId: string | null = null;
 	let isWorking = false;
 
-	const resetNoticeTimeout = () => {
-		if (typeof window !== 'undefined' && noticeTimeout) {
-			window.clearTimeout(noticeTimeout);
-			noticeTimeout = null;
-		}
-	};
+const resetNoticeTimeout = () => {
+	if (noticeTimeout) {
+		clearTimeout(noticeTimeout);
+		noticeTimeout = null;
+	}
+};
 
 	const showNotice = (kind: 'success' | 'error', message: string) => {
 		notice = { kind, message };
-		if (typeof window !== 'undefined') {
-			resetNoticeTimeout();
-			noticeTimeout = window.setTimeout(() => {
-				notice = null;
-				noticeTimeout = null;
-			}, 4000);
-		}
-	};
+	if (typeof window !== 'undefined') {
+		resetNoticeTimeout();
+		noticeTimeout = setTimeout(() => {
+			notice = null;
+			noticeTimeout = null;
+		}, 4000);
+	}
+};
 
 	onDestroy(() => {
 		resetNoticeTimeout();
