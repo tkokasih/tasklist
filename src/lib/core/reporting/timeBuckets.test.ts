@@ -52,7 +52,7 @@ describe('aggregateSessions', () => {
 	});
 
 	it('clamps sessions that partially intersect the range and flags concurrent ones', () => {
-		const now = iso('2024-01-05', '12:00:00');
+		const _now = iso('2024-01-05', '12:00:00');
 		const sessions = [
 			createSession(iso('2024-01-04', '20:00:00'), iso('2024-01-05', '02:00:00'), 6 * 60 * 60 * 1000),
 			createSession(iso('2024-01-05', '10:00:00'), null, 2 * 60 * 60 * 1000)

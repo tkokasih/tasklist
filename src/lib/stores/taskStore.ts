@@ -554,7 +554,7 @@ export const taskStore = {
 				return state;
 			}
 
-			const { projects, changed } = setTaskStatus(state.data.projects, activeId, 'paused');
+			const { projects } = setTaskStatus(state.data.projects, activeId, 'paused');
 			const nextData = touchData(
 				ensureValidSelectedTask({
 					...state.data,

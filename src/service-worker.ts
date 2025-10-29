@@ -90,7 +90,7 @@ async function navigationStrategy(request: Request): Promise<Response> {
 		const response = await fetch(request);
 		cache.put(request, response.clone());
 		return response;
-	} catch (error) {
+	} catch (_error) {
 		const cached = await cache.match(request);
 		if (cached) {
 			return cached;
@@ -106,11 +106,11 @@ async function navigationStrategy(request: Request): Promise<Response> {
 async function networkFallingBackToCache(request: Request): Promise<Response> {
 	try {
 		return await fetch(request);
-	} catch (error) {
+	} catch (_error) {
 		const cached = await caches.match(request);
 		if (cached) {
 			return cached;
 		}
-		throw error;
+		throw _error;
 	}
 }
