@@ -3,12 +3,14 @@
 This document orients automation or coding agents to the structure and responsibilities of the Tasklist application after the home page redesign and data layer work.
 
 ## Tech Stack
+
 - **Framework**: SvelteKit + Vite
 - **UI Styling**: Tailwind classes (configured via `tailwind.config.cjs`, `app.css`)
 - **TypeScript**: Enabled by default (`tsconfig.json`)
 - **Build**: `npm run build` (SvelteKit), `npm run check` for type and a11y validation
 
 ## Source Layout
+
 ```
 src/
   app.css                 Global styles; Tailwind entry.
@@ -37,6 +39,7 @@ build/                    Output from the most recent build (ignored during dev)
 ```
 
 ## Data Flow Summary
+
 1. **State Store (`taskStore`)**
    - Loads initial data (default project/tasks) or LocalStorage payload.
    - Exposes actions to mutate projects, tasks, timer state, snapshots.
@@ -56,12 +59,14 @@ build/                    Output from the most recent build (ignored during dev)
    - Components import store actions to dispatch state updates; non-UI logic remains in `core/`.
 
 ## Key Workflows
+
 - **Nested Task Management**: `TaskItem` recursively renders children; actions call store methods (`addTask`, `moveTaskUp/Down`, `archiveTask`, etc.).
 - **Timer Tracking**: Starting a task calls `taskStore.startTask`, which pauses previous tasks, sets status, starts interval loop for time accumulation.
 - **Snapshots**: `DataCard` uses `taskStore.saveSnapshot/restoreSnapshot/deleteSnapshot`. Snapshots stored in state and persisted via LocalStorage.
 - **Import/Export**: Export triggers `taskStore.exportData` to create a download blob; import reads JSON and hands off to `taskStore.importData`.
 
 ## Commands & Testing
+
 - Install dependencies: `npm install`
 - Start dev server: `npm run dev`
 - Type/a11y checks: `npm run check` (invoked post-changes; currently warning-free)
@@ -69,6 +74,7 @@ build/                    Output from the most recent build (ignored during dev)
 - Build for production: `npm run build`
 
 ## Notes for Agents
+
 - Structured clone usage in `taskTree.ts` falls back to JSON cloning for environments without `structuredClone`.
 - LocalStorage interactions guarded by SvelteKit `browser` flag to avoid SSR issues.
 - Timer interval lives in store module scope; ensure `stopTicking` called when cleaning up (e.g., snapshot restore, archive).

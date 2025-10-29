@@ -2,104 +2,110 @@
  * Convert milliseconds into a `HH:MM:SS` / `MM:SS` string for display.
  */
 export const formatDuration = (ms: number): string => {
-	const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-	const hours = Math.floor(totalSeconds / 3600);
-	const minutes = Math.floor((totalSeconds % 3600) / 60);
-	const seconds = totalSeconds % 60;
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
 
-	const pad = (value: number) => value.toString().padStart(2, '0');
+  const pad = (value: number) => value.toString().padStart(2, "0");
 
-	if (hours > 0) {
-		return `${hours}:${pad(minutes)}:${pad(seconds)}`;
-	}
+  if (hours > 0) {
+    return `${hours}:${pad(minutes)}:${pad(seconds)}`;
+  }
 
-	return `${pad(minutes)}:${pad(seconds)}`;
+  return `${pad(minutes)}:${pad(seconds)}`;
 };
 
 /**
  * Safely format an ISO timestamp, falling back to the raw value when invalid.
  */
 export const formatTimestamp = (iso: string | undefined): string => {
-	if (!iso) {
-		return '';
-	}
+  if (!iso) {
+    return "";
+  }
 
-	const date = new Date(iso);
-	if (Number.isNaN(date.getTime())) {
-		return iso;
-	}
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return iso;
+  }
 
-	return date.toLocaleString();
+  return date.toLocaleString();
 };
 
 /** Supported quick-select time range presets. */
-export type TimePreset = 'today' | 'this-week' | 'last-seven-days';
+export type TimePreset = "today" | "this-week" | "last-seven-days";
 
 /** Inclusive date range and optional preset label used for aggregations. */
 export interface TimeRangeConfig {
-	preset?: TimePreset;
-	start: Date;
-	end: Date;
+  preset?: TimePreset;
+  start: Date;
+  end: Date;
 }
 
 const now = () => new Date();
 
 const startOfDay = (date: Date) => {
-	const copy = new Date(date);
-	copy.setHours(0, 0, 0, 0);
-	return copy;
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
 };
 
 const endOfDay = (date: Date) => {
-	const copy = new Date(date);
-	copy.setHours(23, 59, 59, 999);
-	return copy;
+  const copy = new Date(date);
+  copy.setHours(23, 59, 59, 999);
+  return copy;
 };
 
 const startOfWeek = (date: Date, weekStartsOn: number) => {
-	const copy = startOfDay(date);
-	const day = copy.getDay();
-	const diff = (day - weekStartsOn + 7) % 7;
-	copy.setDate(copy.getDate() - diff);
-	return copy;
+  const copy = startOfDay(date);
+  const day = copy.getDay();
+  const diff = (day - weekStartsOn + 7) % 7;
+  copy.setDate(copy.getDate() - diff);
+  return copy;
 };
 
 /**
  * Options that tweak how preset ranges are computed.
  */
 export interface PresetOptions {
-	weekStartsOn?: number;
-	nowFactory?: () => Date;
+  weekStartsOn?: number;
+  nowFactory?: () => Date;
 }
 
-const applyOptionsNow = (options?: PresetOptions) => (options?.nowFactory ?? now)();
+const applyOptionsNow = (options?: PresetOptions) =>
+  (options?.nowFactory ?? now)();
 
 /**
  * Build a concrete date range for the provided preset, honoring overrides.
  */
-export const buildPresetRange = (preset: TimePreset, options?: PresetOptions): TimeRangeConfig => {
-	const current = applyOptionsNow(options);
+export const buildPresetRange = (
+  preset: TimePreset,
+  options?: PresetOptions,
+): TimeRangeConfig => {
+  const current = applyOptionsNow(options);
 
-	switch (preset) {
-		case 'today': {
-			const start = startOfDay(current);
-			const end = endOfDay(current);
-			return { preset, start, end };
-		}
-		case 'this-week': {
-			const weekAnchor = startOfWeek(current, options?.weekStartsOn ?? 1);
-			const start = weekAnchor;
-			const end = endOfDay(new Date(weekAnchor.getTime() + 6 * 24 * 60 * 60 * 1000));
-			return { preset, start, end };
-		}
-		case 'last-seven-days': {
-			const end = endOfDay(current);
-			const start = new Date(end);
-			start.setDate(start.getDate() - 6);
-			start.setHours(0, 0, 0, 0);
-			return { preset, start, end };
-		}
-		default:
-			return { preset, start: startOfDay(current), end: endOfDay(current) };
-	}
+  switch (preset) {
+    case "today": {
+      const start = startOfDay(current);
+      const end = endOfDay(current);
+      return { preset, start, end };
+    }
+    case "this-week": {
+      const weekAnchor = startOfWeek(current, options?.weekStartsOn ?? 1);
+      const start = weekAnchor;
+      const end = endOfDay(
+        new Date(weekAnchor.getTime() + 6 * 24 * 60 * 60 * 1000),
+      );
+      return { preset, start, end };
+    }
+    case "last-seven-days": {
+      const end = endOfDay(current);
+      const start = new Date(end);
+      start.setDate(start.getDate() - 6);
+      start.setHours(0, 0, 0, 0);
+      return { preset, start, end };
+    }
+    default:
+      return { preset, start: startOfDay(current), end: endOfDay(current) };
+  }
 };

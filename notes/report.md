@@ -1,16 +1,19 @@
 # Reporting Roadmap
 
 ## Vision
+
 - Surface time spent per task directly in the existing hierarchy so users can explore context, compare sibling tasks, and drill into subtasks without switching screens.
 - Allow flexible period breakdowns (daily/weekly/custom ranges) and ensure active timers update the aggregates in real time.
 - Provide export and sharing hooks (CSV, snapshot links) after in-app reporting is stable.
 
 ## Guiding Constraints
+
 - Reuse the current task tree rendering path to avoid duplicating traversal logic or diverging UX.
 - Keep reporting lightweight enough to run in the browser without degrading main interactions; defer heavy calculations to background workers only if profiling indicates a need.
 - Maintain compatibility with LocalStorage persistence and snapshot import/export formats.
 
 ## Incremental Delivery Plan
+
 - [x] **Iteration 0 – Discovery & Instrumentation** — _Completed October 21, 2025._
   - Audit existing task/session data for edge cases (missing durations, overlapping sessions).
   - Capture baseline performance considerations around `taskStore` ticks to monitor aggregation impact.
@@ -63,16 +66,19 @@
   - Measure usage; decide on beta flag removal and GA criteria.
 
 ## Validation & Release Strategy
+
 - Each iteration ends with `npm run check` + targeted Vitest suites; add integration smoke test once reporting mode renders.
 - Gate UI changes behind feature flags to allow internal QA before general availability.
 - Track performance budget (ms spent per tick) and error rates across releases to catch regressions.
 
 ## Next Steps
+
 - Capture the first 60-second tick sample using the new instrumentation and update this note with observed numbers.
 - Sketch how aggregated maps flow into reporting mode data structures to validate selector API requirements and drive UI shape.
 - Prepare lightweight mockups for reporting mode to align on column layout before Iteration 3 work.
 
 ## Reporting Data Flow Sketch
+
 - Selector entry (`createTimeAggregationSelector`) emits `{ range, totals, warnings }`.
 - UI composition:
   - `TaskTree` (reporting mode) pulls selector output + raw task tree to render rows; uses map lookups (`totals.get(task.id)`) for per-column values without re-traversal.

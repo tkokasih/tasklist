@@ -1,14 +1,18 @@
 /**
  * Build-time version information injected by Vite define replacements.
  */
-const VERSION_PREFIX = 'Tasklist v';
-const fallbackCommit = 'dev';
-const fallbackVersion = '0.0.0';
+const VERSION_PREFIX = "Tasklist v";
+const fallbackCommit = "dev";
+const fallbackVersion = "0.0.0";
 
 const appVersion =
-	typeof __APP_VERSION__ === 'string' && __APP_VERSION__.length > 0 ? __APP_VERSION__ : fallbackVersion;
+  typeof __APP_VERSION__ === "string" && __APP_VERSION__.length > 0
+    ? __APP_VERSION__
+    : fallbackVersion;
 const commitHash =
-	typeof __APP_GIT_COMMIT__ === 'string' && __APP_GIT_COMMIT__.length > 0 ? __APP_GIT_COMMIT__ : fallbackCommit;
+  typeof __APP_GIT_COMMIT__ === "string" && __APP_GIT_COMMIT__.length > 0
+    ? __APP_GIT_COMMIT__
+    : fallbackCommit;
 
 /** Semantic version string compiled into the app, or a fallback during dev. */
 export const APP_VERSION = appVersion;
