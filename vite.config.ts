@@ -3,7 +3,7 @@ import { defineConfig } from "vite";
 import { execSync } from "node:child_process";
 import os from "node:os";
 import tailwindcss from "@tailwindcss/vite";
-import packageJson from "./package.json" assert { type: "json" };
+import packageJson from "./package.json" with { type: "json" };
 
 const gitCommitHash = (() => {
   try {
