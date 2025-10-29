@@ -5,6 +5,7 @@
 	import { formatDuration, formatTimestamp } from '$lib/core/time';
 	import type { Task, TaskStatus } from '$lib/core/taskTypes';
 
+	// Sidebar card that surfaces rich task metadata and session history for the selection.
 	const statusLabels: Record<TaskStatus, string> = {
 		archived: 'Archived',
 		completed: 'Completed',
@@ -21,12 +22,15 @@
 		paused: 'task-row__status--paused'
 	};
 
+	// Many timestamp fields are optional, so normalize missing values to a friendly dash.
 	const formatOptionalTimestamp = (value: string | undefined) => (value ? formatTimestamp(value) : '—');
 
 	let task: Task | null = null;
 
 	$: task = $selectedTask;
 </script>
+
+<!-- TaskDetailsCard lives in the sidebar and reveals metadata plus recent sessions for the focused task. -->
 
 <CollapsibleCard title="Task Details" subtitle="Focus on a task to inspect it">
 	{#if task}
@@ -74,6 +78,7 @@
 					<dd class="mt-1 text-slate-700">{formatOptionalTimestamp(task.archivedAt)}</dd>
 				</div>
 			</dl>
+			<!-- Keep the session breakdown close to the metadata so context stays in one place. -->
 			<TaskSessionList {task} />
 		</div>
 	{:else}

@@ -4,8 +4,10 @@
 	import type { SessionAggregation } from '$lib/core/reporting/timeBuckets';
 	import type { ReportingColumnDefinition } from '$lib/stores/uiState';
 
+	// Present the task row shell shared by regular and reporting views.
 	const noop = () => {};
 
+	// Mapping tables drive CSS classes and labels so UI state stays declarative.
 	const statusLabels: Record<Task['status'], string> = {
 		archived: 'Archived',
 		completed: 'Completed',
@@ -30,9 +32,9 @@
 		paused: ''
 	};
 
-	export let task: Task;
-	export let expanded = true;
-	export let hasChildren = false;
+export let task: Task;
+export let expanded = true;
+export let hasChildren = false;
 export let editing = false;
 export let draftContent = '';
 export let titleInput: HTMLTextAreaElement | null = null;
@@ -59,10 +61,13 @@ export let reportingAggregation: SessionAggregation | null = null;
 export let hasConcurrentSessions = false;
 
 const placeholderDuration = '—';
+// Reporting columns show a dash when a bucket has no time for clarity.
 const formatRangeValue = (ms: number) => (ms > 0 ? formatDuration(ms) : placeholderDuration);
 
 $: reportingRangeTotalLabel = formatRangeValue(reportingAggregation?.totalMs ?? 0);
 </script>
+
+<!-- TaskRowSummary handles the visual layout and interaction affordances for each task row in the tree. -->
 
 <div
 	class={`task-row ${rowStatusStyles[task.status]} ${isActive ? 'task-row--active' : ''} ${

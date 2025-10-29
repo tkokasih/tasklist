@@ -7,6 +7,7 @@
 	import TaskRowSummary from './TaskRowSummary.svelte';
 	import type { ReportingColumnDefinition } from '$lib/stores/uiState';
 
+	// Reuse immutable empty collections so Svelte doesn't see a new reference every render.
 	const EMPTY_TOTALS: Map<string, SessionAggregation> = new Map();
 	const EMPTY_CONCURRENCY_IDS = new Set<string>();
 
@@ -41,12 +42,14 @@
 	$: activeSessionElapsed =
 		isActive && latestSession && !latestSession.endedAt ? Math.max(0, latestSession.durationMs) : 0;
 
+	// Compose the textarea content from the task title/description so we can round-trip edits.
 	const composeTaskContent = (currentTask: Task) => {
 		const baseTitle = currentTask.title;
 		const body = currentTask.description?.trim();
 		return body && body.length > 0 ? `${baseTitle}\n\n${body}` : baseTitle;
 	};
 
+	// Keep local editing state in sync with the last committed task data and manage focus handoff.
 	$: {
 		if (!editing) {
 			draftContent = composeTaskContent(task);
@@ -71,6 +74,7 @@
 		});
 	}
 
+	// When another component requests focus here, reopen the editor and reapply focus after the DOM updates.
 	$: if (state.focusedEditorTaskId === task.id) {
 		if (!editing) {
 			editing = true;
@@ -87,8 +91,10 @@
 		}
 	}
 
+	// Cap the visual indent so very deep trees do not drift too far right.
 	const indent = Math.min(depth * (1.1 / 3), 4.4 / 3);
 
+	// Initialize draft state and auto-open editors for brand-new tasks after first render.
 	onMount(() => {
 		draftContent = composeTaskContent(task);
 		initialContentSnapshot = draftContent;
@@ -138,6 +144,7 @@
 		titleField.style.height = `${titleField.scrollHeight}px`;
 	};
 
+	// Commit the textarea content, normalizing line endings and splitting title/description.
 	const commitTaskContent = (): boolean => {
 		editing = false;
 		const normalized = draftContent.replace(/\r\n/g, '\n').trim();
@@ -207,6 +214,7 @@
 		expanded = true;
 	};
 
+	// Support multiline editing, quick sibling creation, and indent/outdent shortcuts.
 	const handleTitleKeydown = (event: KeyboardEvent) => {
 		if (event.key === 'Enter' && event.shiftKey && !event.metaKey && !event.ctrlKey && !event.altKey) {
 			isTitleMultiline = true;
@@ -255,17 +263,21 @@
 		}
 	};
 
+// Expand the textarea in-place as the user types so the full content stays visible.
 const handleTitleInput = () => {
 	isTitleMultiline = draftContent.includes('\n');
 	resizeTitleField();
 };
 
+// Pull cached reporting totals for this task and flag days with overlapping sessions.
 $: {
 	reportingAggregation = reportingTotals.get(task.id) ?? null;
 	hasConcurrentSessions =
 		Boolean(reportingAggregation?.concurrentSessionsDetected) || reportingConcurrentTaskIds.has(task.id);
 }
 </script>
+
+<!-- TaskItem renders a single task row, its inline details/subtask form, and recursively nests any child tasks. -->
 
 <div class="space-y-1" style={`margin-left: ${indent}rem`}>
 	<TaskRowSummary
@@ -299,6 +311,7 @@ $: {
 	/>
 
 	{#if showDetails || addingSubtask}
+		<!-- Inline detail panel mirrors the sidebar card so users can stay in context while editing. -->
 		<div class="task-detail-panel">
 			{#if showDetails}
 				<div class="task-meta-grid">

@@ -11,22 +11,25 @@
 	import TaskItem from './TaskItem.svelte';
 	import { reportingColumns, reportingMode, reportingRange } from '$lib/stores/uiState';
 
+	// Render the root project task list and optionally switch into reporting mode.
 	export let project: Project | null = null;
 	export let emptyMessage = 'No tasks yet. Create your first task to get started.';
 
 	let newTaskTitle = '';
+	// Stable fallbacks used when reporting selectors have not produced any data yet.
 	const EMPTY_TOTALS: Map<string, SessionAggregation> = new Map();
 	const EMPTY_WARNINGS: ReportingWarning[] = [];
 	const initialRange = get(reportingRange);
 	const initialStatuses = get(statusFilters);
+	// Keep a selector instance so we can reuse memoized results as filters change.
 	let reportingSelector = createTimeAggregationSelector(initialRange, {
 		includeArchived: initialStatuses.includes('archived'),
 		includeCompleted: initialStatuses.includes('completed')
 	});
 	let reportingResult: ReportingSelectorResult | null = null;
 	let reportingTotals: Map<string, SessionAggregation> = EMPTY_TOTALS;
-let reportingWarnings: ReportingWarning[] = EMPTY_WARNINGS;
-let concurrentTaskIds = new Set<string>();
+	let reportingWarnings: ReportingWarning[] = EMPTY_WARNINGS;
+	let concurrentTaskIds = new Set<string>();
 
 	const addRootTask = () => {
 		if (!newTaskTitle.trim()) {
@@ -36,6 +39,7 @@ let concurrentTaskIds = new Set<string>();
 		newTaskTitle = '';
 	};
 
+	// React to reporting controls in uiState and rebuild the selector with matching filters.
 	$: isReportingMode = $reportingMode;
 	$: reportingDayColumns = $reportingColumns;
 	$: {
@@ -49,10 +53,13 @@ let concurrentTaskIds = new Set<string>();
 	$: reportingResult = $reportingSelector;
 	$: reportingTotals = reportingResult?.totals ?? EMPTY_TOTALS;
 	$: reportingWarnings = reportingResult?.warnings ?? EMPTY_WARNINGS;
-$: concurrentTaskIds = new Set(
-	reportingWarnings.flatMap((warning) => (warning.type === 'concurrentSessions' ? warning.taskIds : []))
-);
+	// Flag any tasks that have overlapping sessions so TaskItem can surface a warning state.
+	$: concurrentTaskIds = new Set(
+		reportingWarnings.flatMap((warning) => (warning.type === 'concurrentSessions' ? warning.taskIds : []))
+	);
 </script>
+
+<!-- TaskTree orchestrates the root-level task list, optional reporting headers, and new-task entry for a project. -->
 
 {#if project}
 	<div class="space-y-4">

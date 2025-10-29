@@ -10,6 +10,7 @@
 
 	export let task: Task | null = null;
 
+	// Session inline editor surfaces store validation errors using readable copy.
 	const failureMessages: Record<SessionMutationFailureReason, string> = {
 		'task-active': 'Pause the timer before editing sessions.',
 		'task-missing': 'This task is no longer available.',
@@ -21,6 +22,7 @@
 		'no-change': 'No changes detected.'
 	};
 
+	// Convert ISO timestamps into `datetime-local` inputs while respecting the local offset.
 	const toLocalInputValue = (iso: string | undefined): string => {
 		if (!iso) {
 			return '';
@@ -36,6 +38,7 @@
 		return local.toISOString().slice(0, 16);
 	};
 
+	// Track transient success/error toasts so we can fade them out after a delay.
 	type NoticeState = { kind: 'success' | 'error'; message: string } | null;
 
 	let sessions: TaskSession[] = [];
@@ -46,32 +49,34 @@
 	let editEndValue = '';
 	let editingError: string | null = null;
 	let notice: NoticeState = null;
-let noticeTimeout: ReturnType<typeof setTimeout> | null = null;
+	let noticeTimeout: ReturnType<typeof setTimeout> | null = null;
 	let lastTaskId: string | null = null;
 	let isWorking = false;
 
-const resetNoticeTimeout = () => {
-	if (noticeTimeout) {
-		clearTimeout(noticeTimeout);
-		noticeTimeout = null;
-	}
-};
+	// Always clear any pending timeout before showing a new message to avoid race conditions.
+	const resetNoticeTimeout = () => {
+		if (noticeTimeout) {
+			clearTimeout(noticeTimeout);
+			noticeTimeout = null;
+		}
+	};
 
 	const showNotice = (kind: 'success' | 'error', message: string) => {
 		notice = { kind, message };
-	if (typeof window !== 'undefined') {
-		resetNoticeTimeout();
-		noticeTimeout = setTimeout(() => {
-			notice = null;
-			noticeTimeout = null;
-		}, 4000);
-	}
-};
+		if (typeof window !== 'undefined') {
+			resetNoticeTimeout();
+			noticeTimeout = setTimeout(() => {
+				notice = null;
+				noticeTimeout = null;
+			}, 4000);
+		}
+	};
 
 	onDestroy(() => {
 		resetNoticeTimeout();
 	});
 
+	// Route store mutation results into local editing state and user feedback.
 	const applyEditResult = (result: SessionMutationResult) => {
 		if (result.ok) {
 			editingSessionId = null;
@@ -128,6 +133,7 @@ const resetNoticeTimeout = () => {
 		editingError = null;
 	};
 
+	// Push validated updates through the store with lightweight client-side guards.
 	const saveSession = () => {
 		if (!task || !editingSessionId) {
 			return;
@@ -190,6 +196,7 @@ const resetNoticeTimeout = () => {
 	$: sessions = task?.sessions ?? [];
 	$: sortedSessions = [...sessions].sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 	$: isActiveTask = Boolean(task && $taskStore.data.activeTaskId === task.id);
+	// Reset editing/notice state any time the selected task changes.
 	$: {
 		if ((task?.id ?? null) !== lastTaskId) {
 			lastTaskId = task?.id ?? null;
@@ -199,6 +206,7 @@ const resetNoticeTimeout = () => {
 			resetNoticeTimeout();
 		}
 	}
+	// Close the editor if the session was removed externally.
 	$: {
 		if (
 			editingSessionId &&
@@ -210,7 +218,10 @@ const resetNoticeTimeout = () => {
 	}
 </script>
 
+<!-- TaskSessionList lets users inspect, edit, or delete the individual timer sessions for the selected task. -->
+
 {#if notice}
+	<!-- Surface mutation feedback inline so editors understand what just happened. -->
 	<div
 		class={`rounded-md border px-3 py-2 text-xs ${notice.kind === 'success'
 			? 'border-emerald-200 bg-emerald-50 text-emerald-700'
