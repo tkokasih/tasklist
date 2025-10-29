@@ -33,6 +33,7 @@
   let isTitleMultiline = false;
   let reportingAggregation: SessionAggregation | null = null;
   let hasConcurrentSessions = false;
+  let skipNextBlurCommit = false;
 
   $: state = $taskStore;
   $: isActive = state.data.activeTaskId === task.id;
@@ -150,6 +151,10 @@
 
   // Commit the textarea content, normalizing line endings and splitting title/description.
   const commitTaskContent = (): boolean => {
+    if (skipNextBlurCommit) {
+      skipNextBlurCommit = false;
+      return false;
+    }
     editing = false;
     const normalized = draftContent.replace(/\r\n/g, "\n").trim();
     const currentTitle = task.title.trim();
@@ -190,6 +195,35 @@
     initialContentSnapshot = draftContent;
     isDraftNewTask = false;
     return true;
+  };
+
+  // runStructuralCommand ensures structural edits (indent/outdent/reorder) respect draft state.
+  // 1. Blank new drafts stay in edit mode without committing.
+  // 2. Existing content commits before the command; aborted commits cancel the structural change.
+  // 3. Editor focus returns afterward when users triggered the shortcut from an editor.
+  const runStructuralCommand = (command: () => void) => {
+    const wasEditing = editing;
+    const isBlankDraft =
+      isDraftNewTask && draftContent.trim().length === 0;
+
+    if (isBlankDraft) {
+      skipNextBlurCommit = true;
+      tick().then(() => {
+        skipNextBlurCommit = false;
+      });
+      editing = true;
+    } else if (!commitTaskContent()) {
+      if (wasEditing) {
+        editing = true;
+      }
+      return;
+    }
+
+    command();
+
+    if (wasEditing || isBlankDraft) {
+      taskStore.focusTaskEditor(task.id);
+    }
   };
 
   const cancelEditing = () => {
@@ -265,29 +299,17 @@
         event.key === "ArrowDown")
     ) {
       event.preventDefault();
-      const wasEditingBeforeShortcut = editing;
-      const committed = commitTaskContent();
-      if (!committed) {
-        if (wasEditingBeforeShortcut) {
-          editing = true;
+      runStructuralCommand(() => {
+        if (event.key === "ArrowRight") {
+          taskStore.indentTask(task.id);
+        } else if (event.key === "ArrowLeft") {
+          taskStore.outdentTask(task.id);
+        } else if (event.key === "ArrowUp") {
+          taskStore.moveTaskUp(task.id);
+        } else {
+          taskStore.moveTaskDown(task.id);
         }
-        return;
-      }
-
-      if (event.key === "ArrowRight") {
-        taskStore.indentTask(task.id);
-      } else if (event.key === "ArrowLeft") {
-        taskStore.outdentTask(task.id);
-      } else if (event.key === "ArrowUp") {
-        taskStore.moveTaskUp(task.id);
-      } else {
-        taskStore.moveTaskDown(task.id);
-      }
-
-      if (wasEditingBeforeShortcut) {
-        taskStore.focusTaskEditor(task.id);
-      }
-
+      });
       return;
     }
 
@@ -298,25 +320,13 @@
       !event.altKey
     ) {
       event.preventDefault();
-      const wasEditing = editing;
-      const committed = commitTaskContent();
-      if (!committed) {
-        if (wasEditing) {
-          editing = true;
+      runStructuralCommand(() => {
+        if (event.shiftKey) {
+          taskStore.outdentTask(task.id);
+        } else {
+          taskStore.indentTask(task.id);
         }
-        return;
-      }
-
-      if (event.shiftKey) {
-        taskStore.outdentTask(task.id);
-      } else {
-        taskStore.indentTask(task.id);
-      }
-
-      if (wasEditing) {
-        taskStore.focusTaskEditor(task.id);
-      }
-
+      });
       return;
     }
 
