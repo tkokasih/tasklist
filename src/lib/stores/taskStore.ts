@@ -89,11 +89,18 @@ const normalizeTaskSessions = (task: Task): { sessions: TaskSession[]; totalFrom
 		typeof task.timeSpentMs === 'number' && Number.isFinite(task.timeSpentMs) ? Math.max(0, task.timeSpentMs) : 0;
 
 	if (sessions.length === 0 && total > 0) {
+		const fallbackStart = new Date(fallbackTimestamp);
+		const fallbackStartMs = fallbackStart.getTime();
+		const fallbackEndIso =
+			Number.isNaN(fallbackStartMs) || total <= 0
+				? fallbackTimestamp
+				: new Date(fallbackStartMs + total).toISOString();
+
 		const fallbackSession = normalizeSession(
 			{
 				id: generateSessionId(),
 				startedAt: fallbackTimestamp,
-				endedAt: fallbackTimestamp,
+				endedAt: fallbackEndIso,
 				durationMs: total
 			},
 			fallbackTimestamp

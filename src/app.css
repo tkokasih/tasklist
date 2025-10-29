@@ -142,6 +142,10 @@
 		@apply border-slate-300 text-slate-400 hover:bg-slate-200;
 	}
 
+	.task-row--reporting-warning {
+		@apply ring-1 ring-amber-300/70 bg-amber-50/50;
+	}
+
 	.task-row__reporting {
 		@apply flex flex-wrap items-stretch justify-end gap-1 text-[11px] font-semibold text-slate-600;
 	}
@@ -156,6 +160,10 @@
 
 	.task-row__reporting-column--weekend {
 		@apply border-slate-300 bg-slate-100 text-slate-600;
+	}
+
+	.task-row__reporting-column--warning {
+		@apply border-amber-300 bg-amber-50 text-amber-700;
 	}
 
 	.task-row__reporting-column-value {

@@ -1,15 +1,21 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import type { Task } from '$lib/core/taskTypes';
+	import type { SessionAggregation } from '$lib/core/reporting/timeBuckets';
 	import { formatTimestamp } from '$lib/core/time';
 	import { taskStore } from '$lib/stores/taskStore';
 	import TaskRowSummary from './TaskRowSummary.svelte';
 	import type { ReportingColumnDefinition } from '$lib/stores/uiState';
 
+	const EMPTY_TOTALS: Map<string, SessionAggregation> = new Map();
+	const EMPTY_OVERLAP_IDS = new Set<string>();
+
 	export let task: Task;
 	export let depth = 0;
 	export let reportingMode = false;
 	export let reportingColumns: ReportingColumnDefinition[] = [];
+	export let reportingTotals: Map<string, SessionAggregation> = EMPTY_TOTALS;
+	export let reportingOverlapTaskIds: Set<string> = EMPTY_OVERLAP_IDS;
 
 	let expanded = true;
 	let editing = false;
@@ -24,6 +30,8 @@
 	let initialContentSnapshot = '';
 	let pendingReapplyFocus = false;
 	let isTitleMultiline = false;
+	let reportingAggregation: SessionAggregation | null = null;
+	let hasReportingOverlap = false;
 
 	$: state = $taskStore;
 	$: isActive = state.data.activeTaskId === task.id;
@@ -106,9 +114,9 @@
 		taskStore.archiveTask(task.id);
 	};
 
-const handleMoveUp = () => {
-	taskStore.moveTaskUp(task.id);
-};
+	const handleMoveUp = () => {
+		taskStore.moveTaskUp(task.id);
+	};
 
 	const handleMoveDown = () => {
 		taskStore.moveTaskDown(task.id);
@@ -247,10 +255,16 @@ const handleMoveUp = () => {
 		}
 	};
 
-	const handleTitleInput = () => {
-		isTitleMultiline = draftContent.includes('\n');
-		resizeTitleField();
-	};
+const handleTitleInput = () => {
+	isTitleMultiline = draftContent.includes('\n');
+	resizeTitleField();
+};
+
+$: {
+	reportingAggregation = reportingTotals.get(task.id) ?? null;
+	hasReportingOverlap =
+		Boolean(reportingAggregation?.activeOverlapDetected) || reportingOverlapTaskIds.has(task.id);
+}
 </script>
 
 <div class="space-y-1" style={`margin-left: ${indent}rem`}>
@@ -270,6 +284,8 @@ const handleMoveUp = () => {
 		{activeSessionElapsed}
 		{reportingMode}
 		{reportingColumns}
+		{reportingAggregation}
+		hasReportingOverlap={hasReportingOverlap}
 		onSelect={selectTask}
 		onToggleExpand={toggleExpand}
 		onStartOrPause={handleStartOrPause}
@@ -338,6 +354,8 @@ const handleMoveUp = () => {
 					depth={depth + 1}
 					reportingMode={reportingMode}
 					reportingColumns={reportingColumns}
+					reportingTotals={reportingTotals}
+					reportingOverlapTaskIds={reportingOverlapTaskIds}
 				/>
 			{/each}
 		</div>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Task, TaskSession } from '$lib/core/taskTypes';
 	import { formatDuration } from '$lib/core/time';
+	import type { SessionAggregation } from '$lib/core/reporting/timeBuckets';
 	import type { ReportingColumnDefinition } from '$lib/stores/uiState';
 
 	const noop = () => {};
@@ -54,14 +55,20 @@ export let onTitleKeydown: (event: KeyboardEvent) => void = noop;
 export let onSelect: () => void = noop;
 export let reportingMode = false;
 export let reportingColumns: ReportingColumnDefinition[] = [];
+export let reportingAggregation: SessionAggregation | null = null;
+export let hasReportingOverlap = false;
 
 const placeholderDuration = '—';
+const formatRangeValue = (ms: number) => (ms > 0 ? formatDuration(ms) : placeholderDuration);
+
+$: reportingRangeTotalLabel = formatRangeValue(reportingAggregation?.totalMs ?? 0);
 </script>
 
 <div
 	class={`task-row ${rowStatusStyles[task.status]} ${isActive ? 'task-row--active' : ''} ${
 		isPreviewed ? 'task-row--preview' : ''
-	} ${isSelected && !isActive ? 'task-row--selected' : ''
+	} ${isSelected && !isActive ? 'task-row--selected' : ''} ${
+		hasReportingOverlap ? 'task-row--reporting-warning' : ''
 	}`}
 	aria-selected={isSelected}
 	on:pointerdown={onSelect}
@@ -114,8 +121,18 @@ const placeholderDuration = '—';
 			<div class="task-row__timers">
 				<span class="inline-flex items-center gap-1">
 					<span aria-hidden="true">⏱</span>
-					<span>Total {formatDuration(task.timeSpentMs)}</span>
+					{#if reportingMode}
+						<span>Range {reportingRangeTotalLabel}</span>
+					{:else}
+						<span>Total {formatDuration(task.timeSpentMs)}</span>
+					{/if}
 				</span>
+				{#if reportingMode}
+					<span class="inline-flex items-center gap-1 text-xs text-slate-500 sm:text-sm">
+						<span aria-hidden="true">∞</span>
+						<span>Lifetime {formatDuration(task.timeSpentMs)}</span>
+					</span>
+				{/if}
 				{#if isActive && latestSession}
 					<span class="inline-flex items-center gap-1 text-blue-600">
 						<span aria-hidden="true">•</span>
@@ -131,14 +148,18 @@ const placeholderDuration = '—';
 				<span class="task-row__reporting-empty">No reporting columns</span>
 			{:else}
 				{#each reportingColumns as column (column.id)}
+					{@const bucketMs = reportingAggregation?.buckets?.[column.id] ?? 0}
+					{@const columnValue = formatRangeValue(bucketMs)}
 					<div
 						class={`task-row__reporting-column ${
 							column.isToday ? 'task-row__reporting-column--today' : ''
-						} ${column.isWeekend ? 'task-row__reporting-column--weekend' : ''}`}
-						aria-label={column.label}
+						} ${column.isWeekend ? 'task-row__reporting-column--weekend' : ''} ${
+							hasReportingOverlap && column.isToday ? 'task-row__reporting-column--warning' : ''
+						}`}
+						aria-label={`${column.label}: ${columnValue === placeholderDuration ? 'No time logged' : columnValue}`}
 					>
 						<span class="sr-only">{column.label}</span>
-						<span class="task-row__reporting-column-value">{placeholderDuration}</span>
+						<span class="task-row__reporting-column-value">{columnValue}</span>
 					</div>
 				{/each}
 			{/if}

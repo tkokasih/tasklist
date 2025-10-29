@@ -133,9 +133,21 @@ export const aggregateSessions = (sessions: TaskSession[], range: TimeRangeConfi
 		}
 
 		const begin = new Date(session.startedAt).getTime();
-		const end = session.endedAt ? new Date(session.endedAt).getTime() : Date.now();
+		let end = session.endedAt ? new Date(session.endedAt).getTime() : Date.now();
+		const isOpenSession = !session.endedAt;
 
-		if (Number.isNaN(begin) || Number.isNaN(end) || end <= startMs || begin >= endMs) {
+		if (Number.isNaN(begin)) {
+			continue;
+		}
+
+		if (Number.isNaN(end) || end <= begin) {
+			const durationFallback = Number.isFinite(session.durationMs) ? Math.max(0, session.durationMs) : 0;
+			if (durationFallback > 0) {
+				end = begin + durationFallback;
+			}
+		}
+
+		if (Number.isNaN(end) || end <= startMs || begin >= endMs) {
 			continue;
 		}
 
@@ -152,7 +164,7 @@ export const aggregateSessions = (sessions: TaskSession[], range: TimeRangeConfi
 		const bucketKey = sessionBucketKey(clampedBegin);
 		buckets[bucketKey] = (buckets[bucketKey] ?? 0) + overlapMs;
 
-		if (!session.endedAt) {
+		if (isOpenSession) {
 			activeOverlapDetected = true;
 		}
 	}

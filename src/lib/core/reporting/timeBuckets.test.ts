@@ -65,6 +65,14 @@ describe('aggregateSessions', () => {
 		expect(Object.keys(result.buckets)).toContain('2024-01-05');
 		expect(result.activeOverlapDetected).toBe(true);
 	});
+
+	it('falls back to duration when end timestamp is missing or equal to start', () => {
+		const session = createSession(iso('2024-01-05', '09:00:00'), iso('2024-01-05', '09:00:00'), 45 * 60 * 1000);
+		const result = aggregateSessions([session], range(iso('2024-01-05', '00:00:00'), iso('2024-01-06', '00:00:00')));
+
+		expect(result.totalMs).toBe(45 * 60 * 1000);
+		expect(result.buckets['2024-01-05']).toBe(45 * 60 * 1000);
+	});
 });
 
 describe('bucketSessionsForRange', () => {

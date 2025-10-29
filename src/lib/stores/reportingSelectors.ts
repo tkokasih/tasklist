@@ -63,6 +63,7 @@ const collectWarnings = (totals: Map<string, SessionAggregation>): ReportingWarn
 
 const ensureProjects = (data: TaskData | undefined): Project[] => data?.projects ?? [];
 
+// NOTE: As reporting consumers expand (e.g., sidebar cards, exports) we may extract this into a dedicated reporting store.
 export const createTimeAggregationSelector = (
 	range: TimeRangeConfig,
 	options: AggregationOptions = {},

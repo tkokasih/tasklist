@@ -1,13 +1,32 @@
 <script lang="ts">
+	import { get } from 'svelte/store';
 	import type { Project } from '$lib/core/taskTypes';
-	import { taskStore } from '$lib/stores/taskStore';
+	import type { SessionAggregation } from '$lib/core/reporting/timeBuckets';
+	import { statusFilters, taskStore } from '$lib/stores/taskStore';
+	import {
+		createTimeAggregationSelector,
+		type ReportingSelectorResult,
+		type ReportingWarning
+	} from '$lib/stores/reportingSelectors';
 	import TaskItem from './TaskItem.svelte';
-	import { reportingColumns, reportingMode } from '$lib/stores/uiState';
+	import { reportingColumns, reportingMode, reportingRange } from '$lib/stores/uiState';
 
 	export let project: Project | null = null;
 	export let emptyMessage = 'No tasks yet. Create your first task to get started.';
 
 	let newTaskTitle = '';
+	const EMPTY_TOTALS: Map<string, SessionAggregation> = new Map();
+	const EMPTY_WARNINGS: ReportingWarning[] = [];
+	const initialRange = get(reportingRange);
+	const initialStatuses = get(statusFilters);
+	let reportingSelector = createTimeAggregationSelector(initialRange, {
+		includeArchived: initialStatuses.includes('archived'),
+		includeCompleted: initialStatuses.includes('completed')
+	});
+	let reportingResult: ReportingSelectorResult | null = null;
+	let reportingTotals: Map<string, SessionAggregation> = EMPTY_TOTALS;
+	let reportingWarnings: ReportingWarning[] = EMPTY_WARNINGS;
+	let overlapTaskIds = new Set<string>();
 
 	const addRootTask = () => {
 		if (!newTaskTitle.trim()) {
@@ -19,6 +38,20 @@
 
 	$: isReportingMode = $reportingMode;
 	$: reportingDayColumns = $reportingColumns;
+	$: {
+		const includeArchived = $statusFilters.includes('archived');
+		const includeCompleted = $statusFilters.includes('completed');
+		reportingSelector = createTimeAggregationSelector($reportingRange, {
+			includeArchived,
+			includeCompleted
+		});
+	}
+	$: reportingResult = $reportingSelector;
+	$: reportingTotals = reportingResult?.totals ?? EMPTY_TOTALS;
+	$: reportingWarnings = reportingResult?.warnings ?? EMPTY_WARNINGS;
+	$: overlapTaskIds = new Set(
+		reportingWarnings.flatMap((warning) => (warning.type === 'activeOverlap' ? warning.taskIds : []))
+	);
 </script>
 
 {#if project}
@@ -70,7 +103,14 @@
 		{:else}
 			<div class="space-y-4">
 				{#each project.tasks as task (task.id)}
-					<TaskItem {task} depth={0} reportingMode={isReportingMode} reportingColumns={reportingDayColumns} />
+					<TaskItem
+						{task}
+						depth={0}
+						reportingMode={isReportingMode}
+						reportingColumns={reportingDayColumns}
+						reportingTotals={reportingTotals}
+						reportingOverlapTaskIds={overlapTaskIds}
+					/>
 				{/each}
 			</div>
 		{/if}
