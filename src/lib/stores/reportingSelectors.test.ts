@@ -148,7 +148,7 @@ describe('reportingSelectors', () => {
 		expect(getResult(includeArchivedSelector).totals.get('archived-task')?.totalMs).toBe(60 * 60 * 1000);
 	});
 
-	it('surfaces active overlap warnings when open sessions exist', () => {
+	it('surfaces concurrent session warnings when open sessions exist', () => {
 		const task = makeTask({
 			id: 'task-open',
 			title: 'Open session',
@@ -161,7 +161,7 @@ describe('reportingSelectors', () => {
 		const selector = createTimeAggregationSelector(rangeToday, {}, store, true);
 		const warnings = getResult(selector).warnings;
 		expect(warnings).toHaveLength(1);
-		expect(warnings[0]).toEqual({ type: 'activeOverlap', taskIds: ['task-open'] });
+		expect(warnings[0]).toEqual({ type: 'concurrentSessions', taskIds: ['task-open'] });
 	});
 
 	it('returns empty totals when feature flag disabled', () => {

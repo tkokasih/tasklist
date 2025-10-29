@@ -1,5 +1,11 @@
+/**
+ * Lifecycle states a task can move through as it is worked on or archived.
+ */
 export type TaskStatus = 'idle' | 'in-progress' | 'paused' | 'completed' | 'archived';
 
+/**
+ * Represents a contiguous period of active work tracked for a task.
+ */
 export interface TaskSession {
 	id: string;
 	startedAt: string;
@@ -7,6 +13,9 @@ export interface TaskSession {
 	durationMs: number;
 }
 
+/**
+ * Canonical shape for hierarchical task data persisted in projects.
+ */
 export interface Task {
 	id: string;
 	title: string;
@@ -21,6 +30,9 @@ export interface Task {
 	lastStartedAt?: string;
 }
 
+/**
+ * Top-level container for a task tree. Projects own their task hierarchy.
+ */
 export interface Project {
 	id: string;
 	title: string;
@@ -30,6 +42,9 @@ export interface Project {
 	updatedAt: string;
 }
 
+/**
+ * Named snapshot of all projects/tasks used for backups or reports.
+ */
 export interface TaskSnapshot {
 	id: string;
 	name: string;
@@ -37,10 +52,16 @@ export interface TaskSnapshot {
 	data: Project[];
 }
 
+/**
+ * Filters used to narrow which tasks are shown in the UI.
+ */
 export interface TaskFilters {
 	statuses: TaskStatus[];
 }
 
+/**
+ * Full persisted application state mirrored to LocalStorage.
+ */
 export interface TaskData {
 	projects: Project[];
 	activeProjectId: string | null;

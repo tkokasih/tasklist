@@ -8,7 +8,7 @@ import { taskStore } from './taskStore';
 export const REPORTING_ENABLED = true;
 
 export interface ReportingWarning {
-	type: 'activeOverlap';
+	type: 'concurrentSessions';
 	taskIds: string[];
 }
 
@@ -54,11 +54,11 @@ const cloneRange = (range: TimeRangeConfig): TimeRangeConfig => ({
 });
 
 const collectWarnings = (totals: Map<string, SessionAggregation>): ReportingWarning[] => {
-	const overlapTaskIds = [...totals.entries()]
-		.filter(([, aggregation]) => aggregation.activeOverlapDetected)
+	const concurrentTaskIds = [...totals.entries()]
+		.filter(([, aggregation]) => aggregation.concurrentSessionsDetected)
 		.map(([taskId]) => taskId);
 
-	return overlapTaskIds.length > 0 ? [{ type: 'activeOverlap', taskIds: overlapTaskIds }] : [];
+	return concurrentTaskIds.length > 0 ? [{ type: 'concurrentSessions', taskIds: concurrentTaskIds }] : [];
 };
 
 const ensureProjects = (data: TaskData | undefined): Project[] => data?.projects ?? [];

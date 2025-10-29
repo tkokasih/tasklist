@@ -25,8 +25,8 @@
 	});
 	let reportingResult: ReportingSelectorResult | null = null;
 	let reportingTotals: Map<string, SessionAggregation> = EMPTY_TOTALS;
-	let reportingWarnings: ReportingWarning[] = EMPTY_WARNINGS;
-	let overlapTaskIds = new Set<string>();
+let reportingWarnings: ReportingWarning[] = EMPTY_WARNINGS;
+let concurrentTaskIds = new Set<string>();
 
 	const addRootTask = () => {
 		if (!newTaskTitle.trim()) {
@@ -49,9 +49,9 @@
 	$: reportingResult = $reportingSelector;
 	$: reportingTotals = reportingResult?.totals ?? EMPTY_TOTALS;
 	$: reportingWarnings = reportingResult?.warnings ?? EMPTY_WARNINGS;
-	$: overlapTaskIds = new Set(
-		reportingWarnings.flatMap((warning) => (warning.type === 'activeOverlap' ? warning.taskIds : []))
-	);
+$: concurrentTaskIds = new Set(
+	reportingWarnings.flatMap((warning) => (warning.type === 'concurrentSessions' ? warning.taskIds : []))
+);
 </script>
 
 {#if project}
@@ -109,7 +109,7 @@
 						reportingMode={isReportingMode}
 						reportingColumns={reportingDayColumns}
 						reportingTotals={reportingTotals}
-						reportingOverlapTaskIds={overlapTaskIds}
+						reportingConcurrentTaskIds={concurrentTaskIds}
 					/>
 				{/each}
 			</div>

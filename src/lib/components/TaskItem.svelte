@@ -8,14 +8,14 @@
 	import type { ReportingColumnDefinition } from '$lib/stores/uiState';
 
 	const EMPTY_TOTALS: Map<string, SessionAggregation> = new Map();
-	const EMPTY_OVERLAP_IDS = new Set<string>();
+	const EMPTY_CONCURRENCY_IDS = new Set<string>();
 
 	export let task: Task;
 	export let depth = 0;
 	export let reportingMode = false;
 	export let reportingColumns: ReportingColumnDefinition[] = [];
 	export let reportingTotals: Map<string, SessionAggregation> = EMPTY_TOTALS;
-	export let reportingOverlapTaskIds: Set<string> = EMPTY_OVERLAP_IDS;
+	export let reportingConcurrentTaskIds: Set<string> = EMPTY_CONCURRENCY_IDS;
 
 	let expanded = true;
 	let editing = false;
@@ -31,7 +31,7 @@
 	let pendingReapplyFocus = false;
 	let isTitleMultiline = false;
 	let reportingAggregation: SessionAggregation | null = null;
-	let hasReportingOverlap = false;
+	let hasConcurrentSessions = false;
 
 	$: state = $taskStore;
 	$: isActive = state.data.activeTaskId === task.id;
@@ -262,8 +262,8 @@ const handleTitleInput = () => {
 
 $: {
 	reportingAggregation = reportingTotals.get(task.id) ?? null;
-	hasReportingOverlap =
-		Boolean(reportingAggregation?.activeOverlapDetected) || reportingOverlapTaskIds.has(task.id);
+	hasConcurrentSessions =
+		Boolean(reportingAggregation?.concurrentSessionsDetected) || reportingConcurrentTaskIds.has(task.id);
 }
 </script>
 
@@ -285,7 +285,7 @@ $: {
 		{reportingMode}
 		{reportingColumns}
 		{reportingAggregation}
-		hasReportingOverlap={hasReportingOverlap}
+		hasConcurrentSessions={hasConcurrentSessions}
 		onSelect={selectTask}
 		onToggleExpand={toggleExpand}
 		onStartOrPause={handleStartOrPause}
@@ -355,7 +355,7 @@ $: {
 					reportingMode={reportingMode}
 					reportingColumns={reportingColumns}
 					reportingTotals={reportingTotals}
-					reportingOverlapTaskIds={reportingOverlapTaskIds}
+					reportingConcurrentTaskIds={reportingConcurrentTaskIds}
 				/>
 			{/each}
 		</div>

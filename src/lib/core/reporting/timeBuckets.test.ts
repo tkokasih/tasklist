@@ -48,10 +48,10 @@ describe('aggregateSessions', () => {
 		expect(result.buckets['2024-01-02']).toBe(2 * 60 * 60 * 1000);
 		expect(result.buckets['2024-01-03']).toBe(90 * 60 * 1000);
 		expect(result.buckets['2024-02-01']).toBeUndefined();
-		expect(result.activeOverlapDetected).toBe(false);
+		expect(result.concurrentSessionsDetected).toBe(false);
 	});
 
-	it('clamps sessions that overlap partially with the range and flags active ones', () => {
+	it('clamps sessions that partially intersect the range and flags concurrent ones', () => {
 		const now = iso('2024-01-05', '12:00:00');
 		const sessions = [
 			createSession(iso('2024-01-04', '20:00:00'), iso('2024-01-05', '02:00:00'), 6 * 60 * 60 * 1000),
@@ -60,10 +60,10 @@ describe('aggregateSessions', () => {
 
 		const result = aggregateSessions(sessions, range(iso('2024-01-05', '00:00:00'), iso('2024-01-06', '00:00:00')));
 
-		const expectedFirstOverlap = 2 * 60 * 60 * 1000; // 00:00-02:00 on Jan 5
-		expect(result.totalMs).toBeGreaterThanOrEqual(expectedFirstOverlap);
+		const expectedInRange = 2 * 60 * 60 * 1000; // 00:00-02:00 on Jan 5
+		expect(result.totalMs).toBeGreaterThanOrEqual(expectedInRange);
 		expect(Object.keys(result.buckets)).toContain('2024-01-05');
-		expect(result.activeOverlapDetected).toBe(true);
+		expect(result.concurrentSessionsDetected).toBe(true);
 	});
 
 	it('falls back to duration when end timestamp is missing or equal to start', () => {

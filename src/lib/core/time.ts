@@ -1,3 +1,6 @@
+/**
+ * Convert milliseconds into a `HH:MM:SS` / `MM:SS` string for display.
+ */
 export const formatDuration = (ms: number): string => {
 	const totalSeconds = Math.max(0, Math.floor(ms / 1000));
 	const hours = Math.floor(totalSeconds / 3600);
@@ -13,6 +16,9 @@ export const formatDuration = (ms: number): string => {
 	return `${pad(minutes)}:${pad(seconds)}`;
 };
 
+/**
+ * Safely format an ISO timestamp, falling back to the raw value when invalid.
+ */
 export const formatTimestamp = (iso: string | undefined): string => {
 	if (!iso) {
 		return '';
@@ -26,8 +32,10 @@ export const formatTimestamp = (iso: string | undefined): string => {
 	return date.toLocaleString();
 };
 
+/** Supported quick-select time range presets. */
 export type TimePreset = 'today' | 'this-week' | 'last-seven-days';
 
+/** Inclusive date range and optional preset label used for aggregations. */
 export interface TimeRangeConfig {
 	preset?: TimePreset;
 	start: Date;
@@ -56,6 +64,9 @@ const startOfWeek = (date: Date, weekStartsOn: number) => {
 	return copy;
 };
 
+/**
+ * Options that tweak how preset ranges are computed.
+ */
 export interface PresetOptions {
 	weekStartsOn?: number;
 	nowFactory?: () => Date;
@@ -63,6 +74,9 @@ export interface PresetOptions {
 
 const applyOptionsNow = (options?: PresetOptions) => (options?.nowFactory ?? now)();
 
+/**
+ * Build a concrete date range for the provided preset, honoring overrides.
+ */
 export const buildPresetRange = (preset: TimePreset, options?: PresetOptions): TimeRangeConfig => {
 	const current = applyOptionsNow(options);
 

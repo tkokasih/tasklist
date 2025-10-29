@@ -1,5 +1,12 @@
+/**
+ * Immutable task tree utilities used by the writable store layer.
+ * Functions here avoid direct mutation and return updated project arrays.
+ */
 import type { Project, Task, TaskData, TaskSession, TaskSnapshot, TaskStatus } from './taskTypes';
 
+/**
+ * Context passed to task updater callbacks describing where the task lives.
+ */
 export interface TaskUpdateContext {
 	projectId: string;
 	parentIds: string[];
@@ -8,6 +15,9 @@ export interface TaskUpdateContext {
 
 type TaskUpdater = (task: Task, context: TaskUpdateContext) => Task;
 
+/**
+ * Task plus its project and ancestry location within the tree.
+ */
 export interface LocatedTask {
 	task: Task;
 	project: Project;
@@ -30,6 +40,9 @@ const generateId = () => {
 	return `tsk-${Math.random().toString(36).slice(2, 10)}`;
 };
 
+/**
+ * Create a new task with defaults and optional override fields.
+ */
 export const createTask = (title: string, overrides: Partial<Task> = {}): Task => {
 	const timestamp = now();
 	return {
@@ -45,6 +58,9 @@ export const createTask = (title: string, overrides: Partial<Task> = {}): Task =
 	};
 };
 
+/**
+ * Create a new empty project; tasks can be provided via overrides for seeding.
+ */
 export const createProject = (title: string, overrides: Partial<Project> = {}): Project => {
 	const timestamp = now();
 	return {
@@ -57,8 +73,14 @@ export const createProject = (title: string, overrides: Partial<Project> = {}): 
 	};
 };
 
+/**
+ * Default task statuses shown in the UI filters when state is first created.
+ */
 export const DEFAULT_STATUS_FILTERS: TaskStatus[] = ['idle', 'in-progress', 'paused'];
 
+/**
+ * Generate seed project/task data used on first launch or factory reset.
+ */
 export const createInitialData = (): TaskData => {
 	const project = createProject('Project Alpha', {
 		tasks: [
@@ -159,6 +181,9 @@ const mapTasksWithParent = (
 	return { next, changed };
 };
 
+/**
+ * Run a mutator against the target task by id, returning new projects if changed.
+ */
 export const updateTaskById = (
 	projects: Project[],
 	taskId: string,
@@ -199,6 +224,9 @@ const locateTaskRecursive = (
 	return null;
 };
 
+/**
+ * Locate a task across all projects, returning ancestry and sibling index.
+ */
 export const locateTask = (projects: Project[], taskId: string): LocatedTask | null => {
 	for (const project of projects) {
 		const located = locateTaskRecursive(project.tasks, taskId, project);
@@ -245,6 +273,9 @@ const reorderTasksRecursive = (
 	return { next: tasks, changed: false };
 };
 
+/**
+ * Shift a task relative to its siblings. Returns unchanged projects when movement is not possible.
+ */
 export const moveTask = (
 	projects: Project[],
 	taskId: string,
@@ -292,6 +323,9 @@ const appendTaskRecursive = (
 	return { next, changed };
 };
 
+/**
+ * Append a new task to a project or optional parent task.
+ */
 export const addTask = (
 	projects: Project[],
 	projectId: string,
@@ -337,6 +371,9 @@ const touchAncestors = (project: Project, parentIds: string[], timestamp: string
 	}
 };
 
+/**
+ * Insert a sibling task immediately after the target, preserving ancestry.
+ */
 export const addTaskAfter = (
 	projects: Project[],
 	targetTaskId: string,
@@ -367,6 +404,9 @@ export const addTaskAfter = (
 	return { projects: nextProjects, task: newTask, changed: true };
 };
 
+/**
+ * Remove a task (and its descendants) from the cloned project tree.
+ */
 export const removeTaskById = (
 	projects: Project[],
 	taskId: string
@@ -393,6 +433,9 @@ export const removeTaskById = (
 	return { projects: nextProjects, changed: true };
 };
 
+/**
+ * Increase indentation by making the task a child of its previous sibling.
+ */
 export const indentTask = (
 	projects: Project[],
 	taskId: string
@@ -436,6 +479,9 @@ export const indentTask = (
 	return { projects: nextProjects, changed: true };
 };
 
+/**
+ * Decrease indentation by moving the task to the parent's sibling list.
+ */
 export const outdentTask = (
 	projects: Project[],
 	taskId: string
@@ -590,6 +636,9 @@ export const setTaskStatus = (
 		};
 	});
 
+/**
+ * Adjust a task's tracked time and normalize affected sessions.
+ */
 export const incrementTaskTime = (
 	projects: Project[],
 	taskId: string,
@@ -636,6 +685,9 @@ export const incrementTaskTime = (
 		})()
 	}));
 
+/**
+ * Replace a specific session with sanitized data and recompute totals.
+ */
 export const updateTaskSession = (
 	projects: Project[],
 	taskId: string,
@@ -657,6 +709,9 @@ export const updateTaskSession = (
 		return finalizeTaskSessions(task, updatedSessions);
 	});
 
+/**
+ * Remove a session by id and rebuild session aggregates if one was deleted.
+ */
 export const deleteTaskSession = (
 	projects: Project[],
 	taskId: string,
@@ -673,9 +728,12 @@ export const deleteTaskSession = (
 			return task;
 		}
 
-		return finalizeTaskSessions(task, nextSessions);
-	});
+	return finalizeTaskSessions(task, nextSessions);
+});
 
+/**
+ * Produce a flat list of located tasks for search, filtering, or analytics.
+ */
 export const flattenTasks = (projects: Project[]): LocatedTask[] => {
 	const items: LocatedTask[] = [];
 
@@ -695,6 +753,9 @@ export const flattenTasks = (projects: Project[]): LocatedTask[] => {
 	return items;
 };
 
+/**
+ * Create a snapshot payload cloning all projects for persistence/export.
+ */
 export const createSnapshot = (projects: Project[], name?: string): TaskSnapshot => ({
 	id: generateId(),
 	name: name ?? `Snapshot ${new Date().toLocaleString()}`,
@@ -702,4 +763,7 @@ export const createSnapshot = (projects: Project[], name?: string): TaskSnapshot
 	data: cloneProjects(projects)
 });
 
+/**
+ * Apply a snapshot by returning a deep-cloned set of projects.
+ */
 export const applySnapshot = (snapshot: TaskSnapshot): Project[] => cloneProjects(snapshot.data);

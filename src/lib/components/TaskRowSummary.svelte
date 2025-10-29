@@ -56,7 +56,7 @@ export let onSelect: () => void = noop;
 export let reportingMode = false;
 export let reportingColumns: ReportingColumnDefinition[] = [];
 export let reportingAggregation: SessionAggregation | null = null;
-export let hasReportingOverlap = false;
+export let hasConcurrentSessions = false;
 
 const placeholderDuration = '—';
 const formatRangeValue = (ms: number) => (ms > 0 ? formatDuration(ms) : placeholderDuration);
@@ -68,7 +68,7 @@ $: reportingRangeTotalLabel = formatRangeValue(reportingAggregation?.totalMs ?? 
 	class={`task-row ${rowStatusStyles[task.status]} ${isActive ? 'task-row--active' : ''} ${
 		isPreviewed ? 'task-row--preview' : ''
 	} ${isSelected && !isActive ? 'task-row--selected' : ''} ${
-		hasReportingOverlap ? 'task-row--reporting-warning' : ''
+		hasConcurrentSessions ? 'task-row--reporting-warning' : ''
 	}`}
 	aria-selected={isSelected}
 	on:pointerdown={onSelect}
@@ -154,7 +154,7 @@ $: reportingRangeTotalLabel = formatRangeValue(reportingAggregation?.totalMs ?? 
 						class={`task-row__reporting-column ${
 							column.isToday ? 'task-row__reporting-column--today' : ''
 						} ${column.isWeekend ? 'task-row__reporting-column--weekend' : ''} ${
-							hasReportingOverlap && column.isToday ? 'task-row__reporting-column--warning' : ''
+							hasConcurrentSessions && column.isToday ? 'task-row__reporting-column--warning' : ''
 						}`}
 						aria-label={`${column.label}: ${columnValue === placeholderDuration ? 'No time logged' : columnValue}`}
 					>
