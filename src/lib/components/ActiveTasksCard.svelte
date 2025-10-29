@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { formatDuration } from '$lib/core/time';
-	import { activeTask, isTimerRunning, recentTasks, taskStore } from '$lib/stores/taskStore';
+	import { taskStore } from '$lib/stores/taskStore';
+	import { activeTask, isTimerRunning, recentTasks } from '$lib/stores/taskSelectors';
 	import CollapsibleCard from './CollapsibleCard.svelte';
 
 	$: current = $activeTask;

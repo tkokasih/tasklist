@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { DEFAULT_STATUS_FILTERS } from '$lib/core/taskTree';
 	import type { TaskStatus } from '$lib/core/taskTypes';
-	import { ALL_STATUS_VALUES, statusFilters, taskStore } from '$lib/stores/taskStore';
+	import { taskStore, ALL_STATUS_VALUES } from '$lib/stores/taskStore';
+	import { statusFilters } from '$lib/stores/taskSelectors';
 	import {
 		reportingMode,
 		reportingPreset,

@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { derived, get, writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import {
 	addTask as addTaskToProject,
 	addTaskAfter,
@@ -7,7 +7,6 @@ import {
 	createInitialData,
 	createProject,
 	createSnapshot,
-	flattenTasks,
 	incrementTaskTime,
 	locateTask,
 	moveTask,
@@ -17,122 +16,22 @@ import {
 	removeTaskById,
 	setTaskStatus,
 	updateTaskById,
-	updateTaskSession as updateTaskSessionInTree,
-	DEFAULT_STATUS_FILTERS
+	updateTaskSession as updateTaskSessionInTree
 } from '$lib/core/taskTree';
+import { deserializeData, serializeData, STORAGE_KEY } from '$lib/core/persistence';
+import type { TaskData, TaskSession, TaskStatus } from '$lib/core/taskTypes';
 import {
-	createDownloadUrl,
-	deserializeData,
-	parseImportedText,
-	revokeDownloadUrl,
-	serializeData,
-	STORAGE_KEY
-} from '$lib/core/persistence';
-import type { Project, Task, TaskData, TaskSession, TaskStatus } from '$lib/core/taskTypes';
+	orderStatuses,
+	statusesEqual,
+	cloneDefaultStatusSelection,
+	ALL_STATUS_VALUES,
+	isKnownStatus
+} from '$lib/core/taskFilters';
+import { isoNow, sanitizeData, normalizeSessionTimestamp } from '$lib/core/normalization';
+import { createTaskDataExport, parseTaskDataFile, revokeTaskDataExport } from '$lib/core/exporter';
 import { measureAndRecord } from './tickInstrumentation';
 
-const isoNow = () => new Date().toISOString();
-
-const STATUS_ORDER: TaskStatus[] = ['idle', 'in-progress', 'paused', 'completed', 'archived'];
-const STATUS_SET = new Set<TaskStatus>(STATUS_ORDER);
-export const ALL_STATUS_VALUES: ReadonlyArray<TaskStatus> = [...STATUS_ORDER];
-const cloneDefaultStatusSelection = () => [...DEFAULT_STATUS_FILTERS];
-const orderStatuses = (statuses: Iterable<TaskStatus>): TaskStatus[] => {
-	const selection = new Set<TaskStatus>();
-	for (const status of statuses) {
-		if (STATUS_SET.has(status)) {
-			selection.add(status);
-		}
-	}
-	return STATUS_ORDER.filter((status) => selection.has(status));
-};
-const statusesEqual = (a: TaskStatus[], b: TaskStatus[]) =>
-	a.length === b.length && a.every((status, index) => status === b[index]);
-
-const generateSessionId = () => {
-	if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-		return crypto.randomUUID();
-	}
-	return `sess-${Math.random().toString(36).slice(2, 10)}`;
-};
-
-const normalizeSession = (session: TaskSession | undefined, fallbackTimestamp: string): TaskSession => {
-	if (!session) {
-		return {
-			id: generateSessionId(),
-			startedAt: fallbackTimestamp,
-			endedAt: fallbackTimestamp,
-			durationMs: 0
-		};
-	}
-
-	return {
-		id: session.id ?? generateSessionId(),
-		startedAt: typeof session.startedAt === 'string' ? session.startedAt : fallbackTimestamp,
-		endedAt: typeof session.endedAt === 'string' ? session.endedAt : undefined,
-		durationMs: typeof session.durationMs === 'number' && Number.isFinite(session.durationMs)
-			? Math.max(0, session.durationMs)
-			: 0
-	};
-};
-
-const normalizeTaskSessions = (task: Task): { sessions: TaskSession[]; totalFromSessions: number; total: number } => {
-	const fallbackTimestamp = task.lastStartedAt ?? task.updatedAt ?? task.createdAt ?? isoNow();
-	const rawSessions = Array.isArray((task as Task & { sessions?: TaskSession[] }).sessions)
-		? ((task as Task & { sessions?: TaskSession[] }).sessions as TaskSession[])
-		: [];
-
-	const sessions = rawSessions.map((session) => normalizeSession(session, fallbackTimestamp));
-	let totalFromSessions = sessions.reduce((sum, current) => sum + current.durationMs, 0);
-
-	const total =
-		typeof task.timeSpentMs === 'number' && Number.isFinite(task.timeSpentMs) ? Math.max(0, task.timeSpentMs) : 0;
-
-	if (sessions.length === 0 && total > 0) {
-		const fallbackStart = new Date(fallbackTimestamp);
-		const fallbackStartMs = fallbackStart.getTime();
-		const fallbackEndIso =
-			Number.isNaN(fallbackStartMs) || total <= 0
-				? fallbackTimestamp
-				: new Date(fallbackStartMs + total).toISOString();
-
-		const fallbackSession = normalizeSession(
-			{
-				id: generateSessionId(),
-				startedAt: fallbackTimestamp,
-				endedAt: fallbackEndIso,
-				durationMs: total
-			},
-			fallbackTimestamp
-		);
-
-		return {
-			sessions: [fallbackSession],
-			totalFromSessions: fallbackSession.durationMs,
-			total
-		};
-	}
-
-	return { sessions, totalFromSessions, total };
-};
-
-const normalizeTask = (task: Task): Task => {
-	const children = Array.isArray(task.children) ? task.children.map((child) => normalizeTask(child)) : [];
-	const { sessions, totalFromSessions, total } = normalizeTaskSessions(task);
-
-	return {
-		...task,
-		children,
-		sessions,
-		timeSpentMs: Math.max(total, totalFromSessions)
-	};
-};
-
-const normalizeProjects = (projects: TaskData['projects']): TaskData['projects'] =>
-	projects.map((project) => ({
-		...project,
-		tasks: Array.isArray(project.tasks) ? project.tasks.map((task) => normalizeTask(task)) : []
-	}));
+export { ALL_STATUS_VALUES } from '$lib/core/taskFilters';
 
 export type SessionMutationFailureReason =
 	| 'task-active'
@@ -152,28 +51,6 @@ interface SessionEditPayload {
 	durationMs?: number;
 }
 
-const parseTimestamp = (value: string | null | undefined): number | null => {
-	if (!value) {
-		return null;
-	}
-
-	const timestamp = Date.parse(value);
-	if (Number.isNaN(timestamp)) {
-		return null;
-	}
-
-	return timestamp;
-};
-
-const normalizeIsoString = (value: string | null | undefined): string | null => {
-	const timestamp = parseTimestamp(value);
-	if (timestamp === null) {
-		return null;
-	}
-
-	return new Date(timestamp).toISOString();
-};
-
 interface TaskStoreState {
 	data: TaskData;
 	previewTaskId: string | null;
@@ -182,49 +59,6 @@ interface TaskStoreState {
 	exportUrl: string | null;
 	focusedEditorTaskId: string | null;
 }
-
-const sanitizeData = (data: TaskData): TaskData => {
-	const projects = normalizeProjects(data.projects ?? []);
-	const activeProjectId =
-		data.activeProjectId && projects.some((project) => project.id === data.activeProjectId)
-			? data.activeProjectId
-			: projects[0]?.id ?? null;
-
-	const flattened = flattenTasks(projects);
-	const hasTask = (taskId: string | null | undefined) =>
-		Boolean(taskId && flattened.some((item) => item.task.id === taskId));
-
-	const limitedRecent = (data.recentTaskIds ?? [])
-		.filter((id, index, array) => array.indexOf(id) === index)
-		.filter((id) => hasTask(id))
-		.slice(0, 5);
-
-	const activeTaskId = hasTask(data.activeTaskId) ? data.activeTaskId : null;
-	const selectedTaskId = hasTask(data.selectedTaskId) ? data.selectedTaskId : null;
-
-	const rawStatuses = Array.isArray(data.filters?.statuses) ? (data.filters.statuses as TaskStatus[]) : undefined;
-	const normalizedStatuses = (() => {
-		if (!rawStatuses) {
-			return cloneDefaultStatusSelection();
-		}
-		const ordered = orderStatuses(rawStatuses);
-		return ordered.length > 0 ? ordered : cloneDefaultStatusSelection();
-	})();
-
-	return {
-		...data,
-		projects,
-		activeProjectId,
-		activeTaskId,
-		selectedTaskId,
-		recentTaskIds: limitedRecent,
-		snapshots: data.snapshots ?? [],
-		lastSavedAt: data.lastSavedAt ?? isoNow(),
-		filters: {
-			statuses: normalizedStatuses
-		}
-	};
-};
 
 const loadInitialData = (): TaskData => {
 	const fallback = createInitialData();
@@ -289,8 +123,9 @@ const initialState: TaskStoreState = {
 
 const store = writable<TaskStoreState>(initialState);
 
+// Timer lifecycle contract: only a single `tickHandle` may run at any time, and consumers must call
+// `stopTicking` whenever the active task switches, completes, or the store resets to avoid leaking intervals.
 let tickHandle: number | null = null;
-
 const stopTicking = () => {
 	if (tickHandle) {
 		window.clearInterval(tickHandle);
@@ -298,6 +133,9 @@ const stopTicking = () => {
 	}
 };
 
+// `beginTicking` attaches a 1s interval that pipes into `incrementTaskTime`. It always clears any prior
+// handle first so repeated calls remain idempotent. Consumers should invoke this after transitioning a task
+// into the `in-progress` state.
 const beginTicking = () => {
 	if (!browser) {
 		return;
@@ -344,52 +182,6 @@ const withDataUpdate = (updater: (data: TaskData) => TaskData) => {
 		const touched = touchData(validated);
 		return { ...state, data: touched };
 	});
-};
-
-const filterTasksByStatus = (
-	tasks: Task[],
-	allowed: Set<TaskStatus>
-): { tasks: Task[]; changed: boolean } => {
-	if (tasks.length === 0) {
-		return { tasks, changed: false };
-	}
-
-	let changed = false;
-	const next: Task[] = [];
-
-	for (const task of tasks) {
-		const { tasks: filteredChildren, changed: childrenChanged } = filterTasksByStatus(task.children, allowed);
-		const includeSelf = allowed.has(task.status);
-
-		if (!includeSelf && filteredChildren.length === 0) {
-			changed = true;
-			continue;
-		}
-
-		if (!includeSelf) {
-			changed = true;
-			next.push({ ...task, children: filteredChildren });
-			continue;
-		}
-
-		if (childrenChanged) {
-			changed = true;
-			next.push({ ...task, children: filteredChildren });
-			continue;
-		}
-
-		next.push(task);
-	}
-
-	if (!changed && next.length !== tasks.length) {
-		changed = true;
-	}
-
-	if (!changed) {
-		return { tasks, changed: false };
-	}
-
-	return { tasks: next, changed: true };
 };
 
 export const taskStore = {
@@ -609,7 +401,7 @@ export const taskStore = {
 				return data;
 			}
 
-			const startIso = normalizeIsoString(updates.startedAt ?? targetSession.startedAt);
+			const startIso = normalizeSessionTimestamp(updates.startedAt ?? targetSession.startedAt);
 			if (!startIso) {
 				outcome = { ok: false, reason: 'invalid-start' };
 				return data;
@@ -618,7 +410,7 @@ export const taskStore = {
 			const endedAtSource = Object.prototype.hasOwnProperty.call(updates, 'endedAt')
 				? updates.endedAt
 				: targetSession.endedAt;
-			const endIso = normalizeIsoString(endedAtSource ?? undefined);
+			const endIso = normalizeSessionTimestamp(endedAtSource ?? undefined);
 			if (endedAtSource && !endIso) {
 				outcome = { ok: false, reason: 'invalid-end' };
 				return data;
@@ -938,7 +730,7 @@ export const taskStore = {
 	},
 
 	toggleStatusFilter(status: TaskStatus) {
-		if (!STATUS_SET.has(status)) {
+		if (!isKnownStatus(status)) {
 			return;
 		}
 
@@ -966,7 +758,7 @@ export const taskStore = {
 	},
 
 	selectAllStatuses() {
-		this.setStatusFilters(STATUS_ORDER);
+		this.setStatusFilters(Array.from(ALL_STATUS_VALUES));
 	},
 
 	clearStatusFilters() {
@@ -1044,31 +836,30 @@ export const taskStore = {
 	exportData(): string | null {
 		const state = get(store);
 		if (state.exportUrl) {
-			revokeDownloadUrl(state.exportUrl);
+			revokeTaskDataExport(state.exportUrl);
 		}
 
-	if (!browser) {
-		return null;
-	}
+		const url = createTaskDataExport(state.data);
+		if (!url) {
+			return null;
+		}
 
-	const exportPayload: TaskData = { ...state.data, snapshots: [] };
-	const url = createDownloadUrl(exportPayload);
-	store.update((current) => ({ ...current, exportUrl: url }));
-	return url;
-},
+		store.update((current) => ({ ...current, exportUrl: url }));
+		return url;
+	},
 
 	clearExportUrl() {
 		const state = get(store);
 		if (state.exportUrl) {
-			revokeDownloadUrl(state.exportUrl);
+			revokeTaskDataExport(state.exportUrl);
 		}
 
 		store.update((current) => ({ ...current, exportUrl: null }));
 	},
 
 	async importFile(file: File) {
-		const text = await file.text();
-		this.importData(parseImportedText(text));
+		const data = await parseTaskDataFile(file);
+		this.importData(data);
 	},
 
 	importData(data: TaskData) {
@@ -1090,72 +881,3 @@ export const taskStore = {
 		stopTicking();
 	}
 };
-
-export const statusFilters = derived(taskStore, ($state) => $state.data.filters.statuses);
-
-export const activeProject = derived(taskStore, ($state) => {
-	const activeId = $state.data.activeProjectId;
-	return $state.data.projects.find((project) => project.id === activeId) ?? $state.data.projects[0] ?? null;
-});
-
-export const filteredProject = derived([activeProject, statusFilters], ([$project, $statuses]) => {
-	if (!$project) {
-		return null;
-	}
-
-	const allowed = new Set<TaskStatus>($statuses);
-	if (allowed.size === 0) {
-		return { ...$project, tasks: [] };
-	}
-
-	const { tasks, changed } = filterTasksByStatus($project.tasks, allowed);
-	if (!changed) {
-		return $project;
-	}
-
-	return { ...$project, tasks };
-});
-
-export const activeTask = derived(taskStore, ($state) => {
-	if (!$state.data.activeTaskId) {
-		return null;
-	}
-
-	const located = locateTask($state.data.projects, $state.data.activeTaskId);
-	return located?.task ?? null;
-});
-
-export const selectedTask = derived(taskStore, ($state) => {
-	const selectedId = $state.data.selectedTaskId;
-	if (!selectedId) {
-		return null;
-	}
-
-	const located = locateTask($state.data.projects, selectedId);
-	return located?.task ?? null;
-});
-
-export const previewTask = derived(taskStore, ($state) => {
-	if (!$state.previewTaskId) {
-		return null;
-	}
-
-	const located = locateTask($state.data.projects, $state.previewTaskId);
-	return located ?? null;
-});
-
-export const flattenedTasks = derived(taskStore, ($state) => flattenTasks($state.data.projects));
-
-export const taskById = (taskId: string) =>
-	derived(taskStore, ($state) => locateTask($state.data.projects, taskId)?.task ?? null);
-
-export const isTimerRunning = derived(taskStore, ($state) => Boolean($state.data.activeTaskId && $state.timerStartedAt));
-
-export const recentTasks = derived(taskStore, ($state) => {
-	const map = new Map<string, Task>();
-	flattenTasks($state.data.projects).forEach(({ task }) => {
-		map.set(task.id, task);
-	});
-
-	return $state.data.recentTaskIds.map((id) => map.get(id)).filter((task): task is Task => Boolean(task));
-});

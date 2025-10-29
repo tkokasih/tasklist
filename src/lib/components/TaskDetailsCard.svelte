@@ -1,7 +1,7 @@
 <script lang="ts">
 	import CollapsibleCard from './CollapsibleCard.svelte';
 	import TaskSessionList from './TaskSessionList.svelte';
-	import { selectedTask } from '$lib/stores/taskStore';
+	import { selectedTask } from '$lib/stores/taskSelectors';
 	import { formatDuration, formatTimestamp } from '$lib/core/time';
 	import type { Task, TaskStatus } from '$lib/core/taskTypes';
 

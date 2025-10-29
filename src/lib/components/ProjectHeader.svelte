@@ -2,7 +2,8 @@
 	import { tick } from 'svelte';
 	import { APP_VERSION_DISPLAY } from '$lib/core/version';
 	import { formatTimestamp } from '$lib/core/time';
-	import { activeProject, taskStore } from '$lib/stores/taskStore';
+	import { taskStore } from '$lib/stores/taskStore';
+	import { activeProject } from '$lib/stores/taskSelectors';
 
 	let editing = false;
 	let draftTitle = '';

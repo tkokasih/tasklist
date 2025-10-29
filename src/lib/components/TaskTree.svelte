@@ -2,7 +2,8 @@
 	import { get } from 'svelte/store';
 	import type { Project } from '$lib/core/taskTypes';
 	import type { SessionAggregation } from '$lib/core/reporting/timeBuckets';
-	import { statusFilters, taskStore } from '$lib/stores/taskStore';
+import { taskStore } from '$lib/stores/taskStore';
+import { statusFilters } from '$lib/stores/taskSelectors';
 	import {
 		createTimeAggregationSelector,
 		type ReportingSelectorResult,
