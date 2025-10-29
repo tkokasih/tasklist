@@ -219,8 +219,11 @@ export const aggregateSessions = (
   return { buckets, totalMs, concurrentSessionsDetected };
 };
 
-const sessionBucketKey = (timestampMs: number) => {
+export const sessionBucketKey = (timestampMs: number) => {
   const date = new Date(timestampMs);
   // ISO date portion (YYYY-MM-DD) is used so buckets remain locale-agnostic and sortable.
   return date.toISOString().slice(0, 10);
 };
+
+export const sessionBucketKeyForLocalDate = (date: Date) =>
+  sessionBucketKey(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));

@@ -4,6 +4,7 @@ import {
   type TimeRangeConfig,
   type TimePreset,
 } from "$lib/core/time";
+import { sessionBucketKeyForLocalDate } from "$lib/core/reporting/timeBuckets";
 
 export type ReportingPresetId = Exclude<TimePreset, "today">;
 
@@ -38,7 +39,7 @@ export const REPORTING_PRESETS: ReportingPresetDefinition[] = [
   },
 ];
 
-const buildColumnId = (date: Date) => date.toISOString().split("T")[0];
+const buildColumnId = (date: Date) => sessionBucketKeyForLocalDate(date);
 
 const weekdayFormatter = new Intl.DateTimeFormat(undefined, {
   weekday: "short",
