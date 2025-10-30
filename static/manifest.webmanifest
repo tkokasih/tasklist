@@ -2,9 +2,13 @@
   "name": "Tasklist",
   "short_name": "Tasklist",
   "description": "Manage projects, nested tasks, and focus timers offline.",
+  "id": "/",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
+  "launch_handler": {
+    "client_mode": ["focus-existing", "auto"]
+  },
   "background_color": "#111827",
   "theme_color": "#2563eb",
   "orientation": "portrait-primary",
