@@ -6,7 +6,7 @@ import {
 } from "$lib/core/time";
 import { sessionBucketKeyForLocalDate } from "$lib/core/reporting/timeBuckets";
 
-export type ReportingPresetId = Exclude<TimePreset, "today">;
+export type ReportingPresetId = TimePreset;
 
 export interface ReportingPresetDefinition {
   id: ReportingPresetId;
@@ -27,6 +27,11 @@ export interface ReportingColumnDefinition {
 const DEFAULT_PRESET: ReportingPresetId = "last-seven-days";
 
 export const REPORTING_PRESETS: ReportingPresetDefinition[] = [
+  {
+    id: "today",
+    label: "Today",
+    description: "Focus on just the current day.",
+  },
   {
     id: "last-seven-days",
     label: "Last 7 days",
