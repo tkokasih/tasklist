@@ -10,11 +10,11 @@
     type ReportingWarning,
   } from "$lib/stores/reportingSelectors";
   import TaskItem from "./TaskItem.svelte";
-  import {
+import {
     reportingColumns,
     reportingMode,
-    reportingScope,
-    reportingRange,
+    activityScope,
+    activityRange,
   } from "$lib/stores/uiState";
 
   // Render the root project task list and optionally switch into reporting mode.
@@ -26,7 +26,7 @@
   // Stable fallbacks used when reporting selectors have not produced any data yet.
   const EMPTY_TOTALS: Map<string, SessionAggregation> = new Map();
   const EMPTY_WARNINGS: ReportingWarning[] = [];
-  const initialRange = get(reportingRange);
+  const initialRange = get(activityRange);
   const initialStatuses = get(statusFilters);
   // Keep a selector instance so we can reuse memoized results as filters change.
   let reportingSelector = createTimeAggregationSelector(initialRange, {
@@ -82,7 +82,7 @@
   $: {
     const includeArchived = $statusFilters.includes("archived");
     const includeCompleted = $statusFilters.includes("completed");
-    reportingSelector = createTimeAggregationSelector($reportingRange, {
+    reportingSelector = createTimeAggregationSelector($activityRange, {
       includeArchived,
       includeCompleted,
     });
@@ -96,7 +96,7 @@
       warning.type === "concurrentSessions" ? warning.taskIds : [],
     ),
   );
-  $: isReportingScopeEnabled = $reportingScope;
+  $: isReportingScopeEnabled = $activityScope;
   $: hasScopedProject =
     Boolean(project) && isReportingScopeEnabled && Boolean(reportingResult);
   $: scopedTasks =

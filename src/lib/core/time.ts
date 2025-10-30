@@ -33,7 +33,7 @@ export const formatTimestamp = (iso: string | undefined): string => {
 };
 
 /** Supported quick-select time range presets. */
-export type TimePreset = "today" | "this-week" | "last-seven-days";
+export type TimePreset = "all" | "today" | "this-week" | "last-seven-days";
 
 /** Inclusive date range and optional preset label used for aggregations. */
 export interface TimeRangeConfig {
@@ -85,6 +85,11 @@ export const buildPresetRange = (
   const current = applyOptionsNow(options);
 
   switch (preset) {
+    case "all": {
+      const start = startOfDay(new Date(0));
+      const end = endOfDay(current);
+      return { preset, start, end };
+    }
     case "today": {
       const start = startOfDay(current);
       const end = endOfDay(current);

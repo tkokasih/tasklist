@@ -5,12 +5,11 @@
   import { statusFilters } from "$lib/stores/taskSelectors";
   import {
     reportingMode,
-    reportingScope,
-    reportingPreset,
-    REPORTING_PRESETS,
+    activityScope,
+    activityRangePreset,
+    ACTIVITY_RANGE_PRESETS,
     setReportingMode,
-    toggleReportingScope,
-    setReportingPreset,
+    setActivityRangePreset,
   } from "$lib/stores/uiState";
 
   const clone = <T,>(values: Iterable<T>): T[] => Array.from(values);
@@ -48,8 +47,8 @@
     },
   ];
 
-  const findReportingPreset = (id: string) =>
-    REPORTING_PRESETS.find((preset) => preset.id === id);
+  const findActivityRangePreset = (id: string) =>
+    ACTIVITY_RANGE_PRESETS.find((preset) => preset.id === id);
 
   $: statusSegment = (() => {
     if ($statusFilters.length === 0) {
@@ -66,19 +65,26 @@
     return `${$statusFilters.length} statuses selected`;
   })();
 
-  $: activeReportingPreset = findReportingPreset($reportingPreset);
-  $: activityWindowLabel = activeReportingPreset?.label ?? "selected range";
+  $: activeActivityRangePreset = findActivityRangePreset($activityRangePreset);
+  $: activityWindowLabel = activeActivityRangePreset?.label ?? "selected range";
 
   $: summaryText = (() => {
+    const isAllActivity = activeActivityRangePreset?.id === "all";
     if ($statusFilters.length === 0) {
-      if ($reportingScope) {
+      if (isAllActivity) {
+        return "Showing no tasks across all activity";
+      }
+      if ($activityScope) {
         return `Showing no tasks with activity in ${activityWindowLabel}`;
       }
       return "Showing no tasks";
     }
 
     const base = `Showing ${statusSegment}`;
-    if ($reportingScope) {
+    if (isAllActivity) {
+      return `${base} across all activity`;
+    }
+    if ($activityScope) {
       return `${base} with activity in ${activityWindowLabel}`;
     }
     return base;
@@ -118,8 +124,8 @@
         role="group"
         aria-label="Activity filter options"
       >
-        {#each REPORTING_PRESETS as preset}
-          {@const selected = preset.id === $reportingPreset}
+        {#each ACTIVITY_RANGE_PRESETS as preset}
+          {@const selected = preset.id === $activityRangePreset}
           <button
             type="button"
             class={`px-3 py-1 transition-colors ${
@@ -127,7 +133,7 @@
                 ? "bg-slate-900 text-white"
                 : "hover:bg-slate-200/80"
             }`}
-            on:click={() => setReportingPreset(preset.id)}
+            on:click={() => setActivityRangePreset(preset.id)}
             aria-pressed={selected}
             title={preset.description}
           >
@@ -135,27 +141,6 @@
           </button>
         {/each}
       </div>
-    </div>
-
-    <div class="flex flex-col gap-2">
-      <button
-        type="button"
-        class={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold transition ${
-          $reportingScope
-            ? "border-blue-500 bg-blue-50 text-blue-600 hover:bg-blue-100"
-            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
-        }`}
-        on:click={() => toggleReportingScope()}
-        aria-pressed={$reportingScope}
-        title="Show only tasks that have tracked time within the selected activity window."
-      >
-        <span
-          class={`h-2 w-2 rounded-full ${
-            $reportingScope ? "bg-blue-500" : "bg-slate-300"
-          }`}
-        ></span>
-        <span>{$reportingScope ? "In-window tasks" : "All tasks"}</span>
-      </button>
     </div>
 
     <div class="flex flex-col gap-2">

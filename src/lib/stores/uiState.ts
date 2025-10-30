@@ -6,10 +6,10 @@ import {
 } from "$lib/core/time";
 import { sessionBucketKeyForLocalDate } from "$lib/core/reporting/timeBuckets";
 
-export type ReportingPresetId = TimePreset;
+export type ActivityRangePresetId = TimePreset;
 
-export interface ReportingPresetDefinition {
-  id: ReportingPresetId;
+export interface ActivityRangePresetDefinition {
+  id: ActivityRangePresetId;
   label: string;
   description: string;
 }
@@ -24,9 +24,15 @@ export interface ReportingColumnDefinition {
   isWeekend: boolean;
 }
 
-const DEFAULT_PRESET: ReportingPresetId = "last-seven-days";
+const DEFAULT_ACTIVITY_RANGE_PRESET: ActivityRangePresetId =
+  "last-seven-days";
 
-export const REPORTING_PRESETS: ReportingPresetDefinition[] = [
+export const ACTIVITY_RANGE_PRESETS: ActivityRangePresetDefinition[] = [
+  {
+    id: "all",
+    label: "All",
+    description: "Include every tracked session regardless of date.",
+  },
   {
     id: "today",
     label: "Today",
@@ -93,49 +99,48 @@ const buildColumnsForRange = (
 };
 
 const reportingModeWritable = writable(false);
-const reportingScopeWritable = writable(false);
-const reportingPresetWritable = writable<ReportingPresetId>(DEFAULT_PRESET);
+const activityRangePresetWritable = writable<ActivityRangePresetId>(
+  DEFAULT_ACTIVITY_RANGE_PRESET,
+);
 
 export const reportingMode = {
   subscribe: reportingModeWritable.subscribe,
 };
 
-export const reportingScope = {
-  subscribe: reportingScopeWritable.subscribe,
+export const activityRangePreset = {
+  subscribe: activityRangePresetWritable.subscribe,
 };
 
-export const reportingPreset = {
-  subscribe: reportingPresetWritable.subscribe,
-};
-
-export const reportingRange = derived(reportingPresetWritable, (preset) =>
+export const activityRange = derived(activityRangePresetWritable, (preset) =>
   buildPresetRange(preset),
 );
 
-export const reportingColumns = derived(reportingRange, (range) =>
-  buildColumnsForRange(range),
+export const activityScope = derived(activityRangePresetWritable, (preset) =>
+  preset !== "all",
+);
+
+const computeReportingColumns = () =>
+  buildColumnsForRange(buildPresetRange("last-seven-days"));
+
+export const reportingColumns = derived(
+  reportingMode,
+  () => computeReportingColumns(),
 );
 
 export const toggleReportingMode = () => {
   reportingModeWritable.update((current) => !current);
 };
 
-export const toggleReportingScope = () => {
-  reportingScopeWritable.update((current) => !current);
-};
-
 export const setReportingMode = (value: boolean) => {
   reportingModeWritable.set(Boolean(value));
 };
 
-export const setReportingScope = (value: boolean) => {
-  reportingScopeWritable.set(Boolean(value));
-};
-
-export const setReportingPreset = (preset: ReportingPresetId) => {
-  const recognized = REPORTING_PRESETS.some((option) => option.id === preset);
+export const setActivityRangePreset = (preset: ActivityRangePresetId) => {
+  const recognized = ACTIVITY_RANGE_PRESETS.some(
+    (option) => option.id === preset,
+  );
   if (!recognized) {
     return;
   }
-  reportingPresetWritable.set(preset);
+  activityRangePresetWritable.set(preset);
 };
