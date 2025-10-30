@@ -119,18 +119,22 @@
     </button>
 
     {#if $reportingMode}
-      <div class="flex flex-wrap items-center gap-2">
+      <div
+        class="flex flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-white px-2 py-1 text-xs shadow-inner shadow-slate-200/50"
+        role="group"
+        aria-label="Reporting window options"
+      >
         <div
-          class="flex overflow-hidden rounded-full border border-slate-200 bg-white shadow-inner shadow-slate-200/50"
+          class="flex overflow-hidden rounded-full bg-slate-100/70 text-xs font-medium text-slate-600"
         >
           {#each REPORTING_PRESETS as preset}
             {@const selected = preset.id === $reportingPreset}
             <button
               type="button"
-              class={`px-3 py-1 text-xs font-medium transition-colors ${
+              class={`px-3 py-1 transition-colors ${
                 selected
                   ? "bg-slate-900 text-white"
-                  : "text-slate-600 hover:bg-slate-100"
+                  : "hover:bg-slate-200/80"
               }`}
               on:click={() => setReportingPreset(preset.id)}
               aria-pressed={selected}
@@ -141,9 +145,14 @@
           {/each}
         </div>
 
+        <span
+          class="hidden h-5 w-px bg-slate-200 sm:block"
+          aria-hidden="true"
+        ></span>
+
         <button
           type="button"
-          class={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold transition ${
+          class={`inline-flex items-center gap-2 rounded-full border px-3 py-1 font-semibold transition ${
             $reportingScope
               ? "border-blue-500 bg-blue-50 text-blue-600 hover:bg-blue-100"
               : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
