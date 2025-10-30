@@ -70,19 +70,9 @@
 
   $: summaryText = (() => {
     const isAllActivity = activeActivityRangePreset?.id === "all";
-    if ($statusFilters.length === 0) {
-      if (isAllActivity) {
-        return "Showing no tasks across all activity";
-      }
-      if ($activityScope) {
-        return `Showing no tasks with activity in ${activityWindowLabel}`;
-      }
-      return "Showing no tasks";
-    }
-
     const base = `Showing ${statusSegment}`;
     if (isAllActivity) {
-      return `${base} across all activity`;
+      return `${base}`;
     }
     if ($activityScope) {
       return `${base} with activity in ${activityWindowLabel}`;
