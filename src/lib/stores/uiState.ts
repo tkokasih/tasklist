@@ -93,10 +93,15 @@ const buildColumnsForRange = (
 };
 
 const reportingModeWritable = writable(false);
+const reportingScopeWritable = writable(false);
 const reportingPresetWritable = writable<ReportingPresetId>(DEFAULT_PRESET);
 
 export const reportingMode = {
   subscribe: reportingModeWritable.subscribe,
+};
+
+export const reportingScope = {
+  subscribe: reportingScopeWritable.subscribe,
 };
 
 export const reportingPreset = {
@@ -115,8 +120,16 @@ export const toggleReportingMode = () => {
   reportingModeWritable.update((current) => !current);
 };
 
+export const toggleReportingScope = () => {
+  reportingScopeWritable.update((current) => !current);
+};
+
 export const setReportingMode = (value: boolean) => {
   reportingModeWritable.set(Boolean(value));
+};
+
+export const setReportingScope = (value: boolean) => {
+  reportingScopeWritable.set(Boolean(value));
 };
 
 export const setReportingPreset = (preset: ReportingPresetId) => {

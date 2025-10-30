@@ -5,9 +5,11 @@
   import { statusFilters } from "$lib/stores/taskSelectors";
   import {
     reportingMode,
+    reportingScope,
     reportingPreset,
     REPORTING_PRESETS,
     setReportingMode,
+    toggleReportingScope,
     setReportingPreset,
   } from "$lib/stores/uiState";
 
@@ -117,25 +119,46 @@
     </button>
 
     {#if $reportingMode}
-      <div
-        class="flex overflow-hidden rounded-full border border-slate-200 bg-white shadow-inner shadow-slate-200/50"
-      >
-        {#each REPORTING_PRESETS as preset}
-          {@const selected = preset.id === $reportingPreset}
-          <button
-            type="button"
-            class={`px-3 py-1 text-xs font-medium transition-colors ${
-              selected
-                ? "bg-slate-900 text-white"
-                : "text-slate-600 hover:bg-slate-100"
+      <div class="flex flex-wrap items-center gap-2">
+        <div
+          class="flex overflow-hidden rounded-full border border-slate-200 bg-white shadow-inner shadow-slate-200/50"
+        >
+          {#each REPORTING_PRESETS as preset}
+            {@const selected = preset.id === $reportingPreset}
+            <button
+              type="button"
+              class={`px-3 py-1 text-xs font-medium transition-colors ${
+                selected
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+              on:click={() => setReportingPreset(preset.id)}
+              aria-pressed={selected}
+              title={preset.description}
+            >
+              {preset.label}
+            </button>
+          {/each}
+        </div>
+
+        <button
+          type="button"
+          class={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold transition ${
+            $reportingScope
+              ? "border-blue-500 bg-blue-50 text-blue-600 hover:bg-blue-100"
+              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
+          }`}
+          on:click={() => toggleReportingScope()}
+          aria-pressed={$reportingScope}
+          title="Show only tasks that have tracked time within the selected reporting window."
+        >
+          <span
+            class={`h-2 w-2 rounded-full ${
+              $reportingScope ? "bg-blue-500" : "bg-slate-300"
             }`}
-            on:click={() => setReportingPreset(preset.id)}
-            aria-pressed={selected}
-            title={preset.description}
-          >
-            {preset.label}
-          </button>
-        {/each}
+          ></span>
+          <span>{$reportingScope ? "In-window tasks" : "All tasks"}</span>
+        </button>
       </div>
     {/if}
   </div>

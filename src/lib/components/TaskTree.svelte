@@ -1,6 +1,6 @@
 <script lang="ts">
   import { get } from "svelte/store";
-  import type { Project } from "$lib/core/taskTypes";
+  import type { Project, Task } from "$lib/core/taskTypes";
   import type { SessionAggregation } from "$lib/core/reporting/timeBuckets";
   import { taskStore } from "$lib/stores/taskStore";
   import { statusFilters } from "$lib/stores/taskSelectors";
@@ -13,6 +13,7 @@
   import {
     reportingColumns,
     reportingMode,
+    reportingScope,
     reportingRange,
   } from "$lib/stores/uiState";
 
@@ -36,6 +37,36 @@
   let reportingTotals: Map<string, SessionAggregation> = EMPTY_TOTALS;
   let reportingWarnings: ReportingWarning[] = EMPTY_WARNINGS;
   let concurrentTaskIds = new Set<string>();
+
+  const filterTasksForReportingWindow = (
+    tasks: Task[],
+    totals: Map<string, SessionAggregation>,
+  ): Task[] => {
+    if (!tasks || tasks.length === 0) {
+      return [];
+    }
+
+    const filtered: Task[] = [];
+
+    for (const task of tasks) {
+      const scopedChildren = filterTasksForReportingWindow(
+        task.children ?? [],
+        totals,
+      );
+      const aggregation = totals.get(task.id);
+      const totalMs = aggregation?.totalMs ?? 0;
+      const includeActive = task.status === "in-progress";
+
+      if (totalMs > 0 || scopedChildren.length > 0 || includeActive) {
+        filtered.push({
+          ...task,
+          children: scopedChildren,
+        });
+      }
+    }
+
+    return filtered;
+  };
 
   const addRootTask = () => {
     if (!newTaskTitle.trim()) {
@@ -65,11 +96,30 @@
       warning.type === "concurrentSessions" ? warning.taskIds : [],
     ),
   );
+  $: isReportingScopeEnabled = $reportingScope;
+  $: hasScopedProject =
+    Boolean(project) && isReportingScopeEnabled && Boolean(reportingResult);
+  $: scopedTasks =
+    hasScopedProject && project
+      ? filterTasksForReportingWindow(project.tasks, reportingTotals)
+      : project?.tasks ?? [];
+  $: renderProject =
+    hasScopedProject && project
+      ? { ...project, tasks: scopedTasks }
+      : project;
+  $: renderTasks = renderProject?.tasks ?? [];
+  $: scopedEmptyMessage =
+    project &&
+    hasScopedProject &&
+    project.tasks.length > 0 &&
+    renderTasks.length === 0
+      ? "No tasks fall within the selected reporting window."
+      : emptyMessage;
 </script>
 
 <!-- TaskTree orchestrates the root-level task list, optional reporting headers, and new-task entry for a project. -->
 
-{#if project}
+{#if renderProject}
   <div class="space-y-4">
     <form
       class="flex flex-col gap-2 rounded border border-dashed border-slate-300 bg-white/60 p-4 md:flex-row"
@@ -117,15 +167,15 @@
       </div>
     </div>
 
-    {#if project.tasks.length === 0}
+    {#if renderTasks.length === 0}
       <div
         class="rounded-lg border border-slate-200 bg-slate-50 p-6 text-center text-slate-500"
       >
-        {emptyMessage}
+        {scopedEmptyMessage}
       </div>
     {:else}
       <div class="space-y-4">
-        {#each project.tasks as task (task.id)}
+        {#each renderTasks as task (task.id)}
           <TaskItem
             {task}
             depth={0}
