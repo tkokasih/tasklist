@@ -83,9 +83,14 @@
 
 <div class="space-y-3 text-sm text-slate-600">
   <div class="flex flex-wrap items-end gap-4">
-    <div class="flex min-w-[16rem] flex-col gap-2">
+    <div
+      class="flex min-w-[16rem] flex-wrap items-center gap-3"
+    >
+      <span class="text-xs font-medium uppercase tracking-wide text-slate-400"
+        >Status</span
+      >
       <div
-        class="flex flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-white shadow-inner shadow-slate-200/50"
+        class="flex flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-white text-slate-600 shadow-inner shadow-slate-200/50"
       >
         {#each STATUS_PRESETS as preset}
           {@const selected =
@@ -108,9 +113,12 @@
       </div>
     </div>
 
-    <div class="flex flex-col gap-2">
+    <div class="flex flex-wrap items-center gap-3">
+      <span class="text-xs font-medium uppercase tracking-wide text-slate-400"
+        >Activity In</span
+      >
       <div
-        class="flex overflow-hidden rounded-full border border-slate-200 bg-white text-xs font-medium shadow-inner shadow-slate-200/50 text-slate-600"
+        class="flex overflow-hidden rounded-full border border-slate-200 bg-white text-xs font-medium text-slate-600 shadow-inner shadow-slate-200/50"
         role="group"
         aria-label="Activity filter options"
       >
@@ -171,7 +179,10 @@
       </button>
     </div>
 
-    <div class="ml-auto flex flex-col gap-2">
+    <div class="ml-auto flex flex-wrap items-center gap-2">
+      <span class="text-xs font-medium uppercase tracking-wide text-slate-600"
+        >Reporting</span
+      >
       <button
         type="button"
         class={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold transition ${
@@ -183,11 +194,11 @@
         aria-pressed={$reportingMode}
       >
         <span
-          class="inline-flex h-5 w-9 items-center rounded-full bg-slate-200 p-0.5 transition-all"
+          class="inline-flex h-4 w-7 items-center rounded-full border border-slate-300 bg-slate-200 p-0.5 transition-all"
         >
           <span
-            class={`block h-4 w-4 rounded-full bg-white shadow transition-transform ${
-              $reportingMode ? "translate-x-4 bg-blue-500" : ""
+            class={`block h-3 w-3 rounded-full bg-white shadow transition-transform ${
+              $reportingMode ? "translate-x-3 bg-blue-500" : ""
             }`}
           ></span>
         </span>
