@@ -48,9 +48,12 @@
     },
   ];
 
-  $: statusSummary = (() => {
+  const findReportingPreset = (id: string) =>
+    REPORTING_PRESETS.find((preset) => preset.id === id);
+
+  $: statusSegment = (() => {
     if ($statusFilters.length === 0) {
-      return "No statuses";
+      return "No statuses selected";
     }
     for (const preset of STATUS_PRESETS) {
       const matches =
@@ -62,15 +65,36 @@
     }
     return `${$statusFilters.length} statuses selected`;
   })();
+
+  $: activeReportingPreset = findReportingPreset($reportingPreset);
+  $: reportingWindowLabel = activeReportingPreset?.label ?? "selected range";
+
+  $: summaryText = (() => {
+    if ($statusFilters.length === 0) {
+      if ($reportingMode && $reportingScope) {
+        return `Showing no tasks with activity in ${reportingWindowLabel}`;
+      }
+      return "Showing no tasks";
+    }
+
+    const base = `Showing ${statusSegment}`;
+    if ($reportingMode && $reportingScope) {
+      return `${base} with activity in ${reportingWindowLabel}`;
+    }
+    return base;
+  })();
 </script>
 
-<div
-  class="flex flex-wrap items-center justify-end gap-3 text-sm text-slate-600"
->
-  <div class="flex flex-wrap items-center gap-2">
+<div class="flex flex-wrap items-start gap-6 text-sm text-slate-600">
+  <div class="flex min-w-[16rem] flex-col gap-2">
     <span class="text-xs tracking-wide text-slate-400 uppercase">Status</span>
+    <span
+      class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600"
+    >
+      {summaryText}
+    </span>
     <div
-      class="flex overflow-hidden rounded-full border border-slate-200 bg-white shadow-inner shadow-slate-200/50"
+      class="flex flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-white shadow-inner shadow-slate-200/50"
     >
       {#each STATUS_PRESETS as preset}
         {@const selected =
@@ -93,30 +117,31 @@
     </div>
   </div>
 
-  <div class="flex flex-wrap items-center gap-2">
-    <span class="text-xs tracking-wide text-slate-400 uppercase">Reporting</span
-    >
-    <button
-      type="button"
-      class={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold transition ${
-        $reportingMode
-          ? "border-blue-500 bg-blue-50 text-blue-600 hover:bg-blue-100"
-          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
-      }`}
-      on:click={() => setReportingMode(!$reportingMode)}
-      aria-pressed={$reportingMode}
-    >
-      <span
-        class="inline-flex h-5 w-9 items-center rounded-full bg-slate-200 p-0.5 transition-all"
+  <div class="ml-auto flex flex-col gap-2">
+    <span class="text-xs tracking-wide text-slate-400 uppercase">Reporting</span>
+    <div class="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        class={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold transition ${
+          $reportingMode
+            ? "border-blue-500 bg-blue-50 text-blue-600 hover:bg-blue-100"
+            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
+        }`}
+        on:click={() => setReportingMode(!$reportingMode)}
+        aria-pressed={$reportingMode}
       >
         <span
-          class={`block h-4 w-4 rounded-full bg-white shadow transition-transform ${
-            $reportingMode ? "translate-x-4 bg-blue-500" : ""
-          }`}
-        ></span>
-      </span>
-      <span>{$reportingMode ? "On" : "Off"}</span>
-    </button>
+          class="inline-flex h-5 w-9 items-center rounded-full bg-slate-200 p-0.5 transition-all"
+        >
+          <span
+            class={`block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+              $reportingMode ? "translate-x-4 bg-blue-500" : ""
+            }`}
+          ></span>
+        </span>
+        <span>{$reportingMode ? "On" : "Off"}</span>
+      </button>
+    </div>
 
     {#if $reportingMode}
       <div
@@ -172,7 +197,7 @@
     {/if}
   </div>
 
-  <div class="flex items-center gap-2">
+  <div class="flex items-center gap-2 self-end">
     <button
       type="button"
       class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm hover:border-slate-300 hover:text-slate-700"
@@ -191,7 +216,7 @@
     </button>
   </div>
 
-  <div class="flex items-center gap-2">
+  <div class="flex items-center gap-2 self-end">
     <button
       type="button"
       class="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm hover:border-slate-300 hover:text-slate-700"
@@ -208,11 +233,5 @@
         />
       </svg>
     </button>
-
-    <span
-      class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600"
-    >
-      {statusSummary}
-    </span>
   </div>
 </div>
