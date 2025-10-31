@@ -27,7 +27,7 @@
 
 @layer components {
   .task-row {
-    @apply flex items-center gap-3 rounded-md bg-white/80 px-3 py-2 text-sm transition;
+    @apply flex items-center gap-0 rounded-md bg-white/80 px-1 py-1 text-sm transition;
   }
 
   .task-row--active {
@@ -43,7 +43,7 @@
   }
 
   .task-row--completed {
-    @apply border border-emerald-200 bg-emerald-50/80 text-emerald-900;
+    @apply border-emerald-200 bg-emerald-50/80 text-emerald-900;
   }
 
   .task-row--completed:hover,
@@ -61,11 +61,29 @@
   }
 
   .task-row__toggle {
-    @apply flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-100 disabled:cursor-default disabled:opacity-60;
+    @apply flex h-7 w-3 flex-shrink-0 items-center justify-center rounded-full border-slate-200 text-slate-500 transition hover:bg-slate-100 disabled:cursor-default disabled:opacity-60;
   }
 
   .task-row__toggle-icon {
     @apply inline-block text-xs transition-transform;
+  }
+
+  .task-row__drag-handle {
+    @apply flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border-transparent bg-transparent text-slate-400 transition;
+    @apply cursor-grab select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300;
+    touch-action: none;
+  }
+
+  .task-row__drag-handle:hover {
+    @apply border-slate-300 bg-slate-100 text-slate-600;
+  }
+
+  .task-row__drag-handle:active {
+    @apply cursor-grabbing border-blue-400 bg-blue-50 text-blue-600;
+  }
+
+  .task-row__drag-handle-icon {
+    @apply text-[18px] leading-none;
   }
 
   .task-row__title {
@@ -161,7 +179,7 @@
   }
 
   .task-row__reporting-column {
-    @apply flex min-w-[4.5rem] flex-col items-center justify-center rounded-md border border-slate-200 bg-white/80 px-2 py-1 text-center shadow-inner;
+    @apply flex min-w-[4.5rem] flex-col items-center justify-center rounded-md border border-slate-200 bg-white/80 px-2 py-0 text-center shadow-inner;
   }
 
   .task-row__reporting-column--today {

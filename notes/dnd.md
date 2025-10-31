@@ -91,7 +91,8 @@ Adopt **Option A**. It keeps the interaction fluid, aligns with user expectation
 ## Implementation To-Do
 - [ ] **Data layer:** Implement and test `moveTaskTo` in `taskTree.ts`, surface it through `taskStore`, and ensure updated tasks touch `updatedAt`.
 - [ ] **Drag context:** Scaffold shared DnD state (`taskDragContext`) to coordinate active drag metadata across `TaskItem` instances.
-- [ ] **UI affordance:** Add the drag handle, placeholder styling, and horizontal threshold logic to `TaskRowSummary`/`TaskItem`; guard behind a feature flag for the spike phase.
+- [ ] **UI affordance:** Add the drag handle, placeholder styling, and horizontal threshold logic to `TaskRowSummary`/`TaskItem`.
+  - [x] Drag handle scaffold in `TaskRowSummary`; preview ships in-progress (2025-10-31).
 - [ ] **Auto behaviors:** Implement hover-to-expand, auto-scroll, and indentation snapping animations with respect for `prefers-reduced-motion`.
 - [ ] **Accessibility:** Announce drag state changes, expose keyboard equivalents via the handle, and verify focus management during abort/drop.
 - [ ] **Validation:** Run targeted Vitest suites and capture a lightweight manual test script (desktop + touch) before promoting the feature flag.

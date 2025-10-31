@@ -97,7 +97,7 @@
   }
 
   // Cap the visual indent so very deep trees do not drift too far right.
-  const indent = Math.min(depth * (1.1 / 3), 4.4 / 3);
+  const indent = Math.min(depth * (1.0 / 10), 4.0 / 10);
 
   // Initialize draft state and auto-open editors for brand-new tasks after first render.
   onMount(() => {
@@ -353,7 +353,7 @@
 
 <!-- TaskItem renders a single task row, its inline details/subtask form, and recursively nests any child tasks. -->
 
-<div class="space-y-1" style={`margin-left: ${indent}rem`}>
+<div class="space-y-0 mb-0" style={`margin-left: ${indent}rem`}>
   <TaskRowSummary
     {task}
     {expanded}
@@ -444,7 +444,7 @@
   {/if}
 
   {#if expanded && task.children.length > 0}
-    <div class="space-y-1 border-l border-slate-200 pl-5">
+    <div class="space-y-0 border-l border-slate-200 pl-5">
       {#each task.children as child (child.id)}
         <svelte:self
           task={child}

@@ -98,9 +98,22 @@
       <span class="task-row__toggle-icon">•</span>
     {/if}
   </button>
+      <button
+        class="task-row__drag-handle"
+        type="button"
+        aria-label="Drag task to reorder"
+        title="Drag to reorder"
+        draggable="false"
+        on:pointerdown|stopPropagation
+        on:click|preventDefault|stopPropagation
+      >
+        <span class="task-row__drag-handle-icon" aria-hidden="true">⋮⋮</span>
+      </button>
 
-  <div class="flex min-w-0 flex-1 items-center gap-3">
-    <div class="flex min-w-0 flex-1 items-center gap-2">
+
+  <div class="flex min-w-0 flex-1 items-center gap-2">
+    <div class="flex min-w-0 flex-1 items-center gap-1.5">
+
       {#if editing}
         <textarea
           class="task-row__title-input"
