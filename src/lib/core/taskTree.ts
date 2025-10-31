@@ -124,6 +124,7 @@ export const createInitialData = (): TaskData => {
     activeTaskId: null,
     selectedTaskId: null,
     recentTaskIds: [],
+    collapsedTaskIds: [],
     snapshots: [],
     lastSavedAt: now(),
     filters: {

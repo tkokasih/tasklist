@@ -199,6 +199,16 @@ export const sanitizeData = (data: TaskData): TaskData => {
     .filter((id) => hasTask(id))
     .slice(0, 5);
 
+  const rawCollapsed = Array.isArray(
+    (data as TaskData & { collapsedTaskIds?: string[] }).collapsedTaskIds,
+  )
+    ? ((data as TaskData & { collapsedTaskIds?: string[] })
+        .collapsedTaskIds as string[])
+    : [];
+  const collapsedTaskIds = rawCollapsed
+    .filter((id, index, array) => array.indexOf(id) === index)
+    .filter((id) => hasTask(id));
+
   const activeTaskId = hasTask(data.activeTaskId) ? data.activeTaskId : null;
   const selectedTaskId = hasTask(data.selectedTaskId)
     ? data.selectedTaskId
@@ -216,6 +226,7 @@ export const sanitizeData = (data: TaskData): TaskData => {
     activeTaskId,
     selectedTaskId,
     recentTaskIds: limitedRecent,
+    collapsedTaskIds,
     snapshots: data.snapshots ?? [],
     lastSavedAt: data.lastSavedAt ?? isoNow(),
     filters: {

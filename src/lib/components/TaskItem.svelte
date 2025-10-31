@@ -114,7 +114,7 @@
     if (task.children.length === 0) {
       return;
     }
-    expanded = !expanded;
+    taskStore.toggleTaskExpansion(task.id);
   };
 
   const handleStartOrPause = () => {
@@ -252,9 +252,9 @@
       return;
     }
     taskStore.addTask(subtaskTitle, task.id);
+    taskStore.setTaskExpanded(task.id, true);
     subtaskTitle = "";
     addingSubtask = false;
-    expanded = true;
   };
 
   // Support multiline editing, quick sibling creation, and indent/outdent shortcuts.
@@ -349,6 +349,10 @@
       Boolean(reportingAggregation?.concurrentSessionsDetected) ||
       reportingConcurrentTaskIds.has(task.id);
   }
+
+  $: expanded = !(
+    state.data.collapsedTaskIds ?? []
+  ).includes(task.id);
 </script>
 
 <!-- TaskItem renders a single task row, its inline details/subtask form, and recursively nests any child tasks. -->

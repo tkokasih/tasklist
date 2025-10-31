@@ -73,6 +73,7 @@ export interface TaskData {
   activeTaskId: string | null;
   selectedTaskId: string | null;
   recentTaskIds: string[];
+  collapsedTaskIds: string[];
   snapshots: TaskSnapshot[];
   lastSavedAt?: string;
   filters: TaskFilters;

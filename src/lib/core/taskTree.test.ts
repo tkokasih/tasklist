@@ -102,6 +102,7 @@ describe("taskTree core helpers", () => {
     expect(data.activeTaskId).toBeNull();
     expect(Array.isArray(data.snapshots)).toBe(true);
     expect(data.recentTaskIds).toEqual([]);
+    expect(data.collapsedTaskIds).toEqual([]);
     expect(data.lastSavedAt).toBe(baseTime);
     expect(data.filters.statuses).toEqual(DEFAULT_STATUS_FILTERS);
   });

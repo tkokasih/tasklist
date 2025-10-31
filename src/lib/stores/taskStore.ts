@@ -129,6 +129,36 @@ const ensureValidSelectedTask = (data: TaskData): TaskData => {
   return { ...data, selectedTaskId: null };
 };
 
+const ensureValidCollapsedTasks = (data: TaskData): TaskData => {
+  const source = Array.isArray(data.collapsedTaskIds)
+    ? data.collapsedTaskIds
+    : [];
+  const normalized = source
+    .filter((id, index) => source.indexOf(id) === index)
+    .filter((id) => Boolean(locateTask(data.projects, id)));
+
+  if (
+    Array.isArray(data.collapsedTaskIds) &&
+    data.collapsedTaskIds.length === normalized.length &&
+    data.collapsedTaskIds.every((id, index) => id === normalized[index])
+  ) {
+    return data;
+  }
+
+  if (
+    normalized.length === 0 &&
+    Array.isArray(data.collapsedTaskIds) &&
+    data.collapsedTaskIds.length === 0
+  ) {
+    return data;
+  }
+
+  return { ...data, collapsedTaskIds: normalized };
+};
+
+const finalizeData = (data: TaskData): TaskData =>
+  touchData(ensureValidCollapsedTasks(ensureValidSelectedTask(data)));
+
 const initialState: TaskStoreState = {
   data: loadInitialData(),
   previewTaskId: null,
@@ -201,8 +231,7 @@ const withDataUpdate = (updater: (data: TaskData) => TaskData) => {
       return state;
     }
 
-    const validated = ensureValidSelectedTask(nextData);
-    const touched = touchData(validated);
+    const touched = finalizeData(nextData);
     return { ...state, data: touched };
   });
 };
@@ -291,15 +320,13 @@ export const taskStore = {
           ? state.data.selectedTaskId
           : null;
 
-      const nextData = touchData(
-        ensureValidSelectedTask({
-          ...state.data,
-          projects,
-          activeProjectId,
-          activeTaskId,
-          selectedTaskId,
-        }),
-      );
+      const nextData = finalizeData({
+        ...state.data,
+        projects,
+        activeProjectId,
+        activeTaskId,
+        selectedTaskId,
+      });
 
       return {
         ...state,
@@ -347,12 +374,10 @@ export const taskStore = {
 
       createdTaskId = task.id;
 
-      const nextData = touchData(
-        ensureValidSelectedTask({
-          ...state.data,
-          projects,
-        }),
-      );
+      const nextData = finalizeData({
+        ...state.data,
+        projects,
+      });
 
       return { ...state, data: nextData };
     });
@@ -382,7 +407,7 @@ export const taskStore = {
             : state.data.selectedTaskId,
         recentTaskIds: state.data.recentTaskIds.filter((id) => id !== taskId),
       };
-      const nextData = touchData(ensureValidSelectedTask(baseData));
+      const nextData = finalizeData(baseData);
 
       clearedTimer = wasActive;
 
@@ -622,10 +647,13 @@ export const taskStore = {
         recentTaskIds,
       };
 
-      const preparedData = ensureValidSelectedTask(nextData);
+      const preparedData = ensureValidCollapsedTasks(
+        ensureValidSelectedTask(nextData),
+      );
       const shouldPersist =
         changed || activeTaskId !== taskId || selectionChanged;
-      const finalData = shouldPersist ? touchData(preparedData) : preparedData;
+      const mustPersist = shouldPersist || preparedData !== nextData;
+      const finalData = mustPersist ? touchData(preparedData) : preparedData;
 
       shouldStartTimer = true;
 
@@ -655,13 +683,11 @@ export const taskStore = {
         activeId,
         "paused",
       );
-      const nextData = touchData(
-        ensureValidSelectedTask({
-          ...state.data,
-          projects,
-          activeTaskId: null,
-        }),
-      );
+      const nextData = finalizeData({
+        ...state.data,
+        projects,
+        activeTaskId: null,
+      });
 
       shouldStop = true;
 
@@ -705,7 +731,7 @@ export const taskStore = {
             ? null
             : state.data.selectedTaskId,
       };
-      const nextData = touchData(ensureValidSelectedTask(baseData));
+      const nextData = finalizeData(baseData);
 
       return {
         ...state,
@@ -718,6 +744,40 @@ export const taskStore = {
     if (clearedTimer) {
       stopTicking();
     }
+  },
+
+  setTaskExpanded(taskId: string, expanded: boolean) {
+    withDataUpdate((data) => {
+      const collapsed = new Set(data.collapsedTaskIds ?? []);
+      const wasCollapsed = collapsed.has(taskId);
+
+      if (expanded) {
+        if (!wasCollapsed) {
+          return data;
+        }
+        collapsed.delete(taskId);
+      } else {
+        if (wasCollapsed) {
+          return data;
+        }
+        collapsed.add(taskId);
+      }
+
+      return { ...data, collapsedTaskIds: Array.from(collapsed) };
+    });
+  },
+
+  toggleTaskExpansion(taskId: string) {
+    withDataUpdate((data) => {
+      const collapsed = new Set(data.collapsedTaskIds ?? []);
+      if (collapsed.has(taskId)) {
+        collapsed.delete(taskId);
+      } else {
+        collapsed.add(taskId);
+      }
+
+      return { ...data, collapsedTaskIds: Array.from(collapsed) };
+    });
   },
 
   archiveTask(taskId: string) {
@@ -747,7 +807,7 @@ export const taskStore = {
             ? null
             : state.data.selectedTaskId,
       };
-      const nextData = touchData(ensureValidSelectedTask(baseData));
+      const nextData = finalizeData(baseData);
 
       return {
         ...state,
@@ -901,7 +961,7 @@ export const taskStore = {
         ...state.data,
         selectedTaskId: nextSelected,
       };
-      const nextData = touchData(ensureValidSelectedTask(baseData));
+      const nextData = finalizeData(baseData);
 
       return { ...state, data: nextData };
     });

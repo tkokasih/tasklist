@@ -5,6 +5,7 @@
 - Keyboard shortcuts already support reorder (`Alt+↑/↓`), indent (`Alt/Shift+Tab`), and structural safety via `runStructuralCommand` in `TaskItem.svelte:184`.
 - Task hierarchy is shallow in most projects but can become deeply nested; `TaskItem` clamps visual indent to `4.4/3rem`.
 - Data layer only reorders within the current parent (`moveTask`) or single-level indent/outdent transformations; no generic “move to arbitrary parent/index” helper yet.
+- Task collapse state now persists via `TaskData.collapsedTaskIds`, so refreshes retain fold/expand choices (2025-10-31).
 
 ## Goals
 - Give mouse/touch users a predictable, learnable way to drag tasks anywhere in the tree.

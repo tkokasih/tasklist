@@ -49,6 +49,7 @@ const withProjects = (projects: Project[]): TaskData => ({
   activeTaskId: null,
   selectedTaskId: null,
   recentTaskIds: [],
+  collapsedTaskIds: [],
   snapshots: [],
   lastSavedAt: iso("2024-01-01", "00:00:00"),
   filters: {

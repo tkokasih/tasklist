@@ -26,6 +26,7 @@ const sampleData: TaskData = {
   activeTaskId: null,
   selectedTaskId: null,
   recentTaskIds: [],
+  collapsedTaskIds: [],
   snapshots: [],
   lastSavedAt: "2024-01-01T00:00:00.000Z",
   filters: {
