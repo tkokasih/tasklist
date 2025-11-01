@@ -6,6 +6,19 @@
   import { taskStore } from "$lib/stores/taskStore";
   import TaskRowSummary from "./TaskRowSummary.svelte";
   import type { ReportingColumnDefinition } from "$lib/stores/uiState";
+  import {
+    dndzone,
+    SHADOW_ITEM_MARKER_PROPERTY_NAME,
+    TRIGGERS,
+  } from "svelte-dnd-action";
+  import type { DndEvent, Item as DndItem } from "svelte-dnd-action";
+  import { locateTask } from "$lib/core/taskTree";
+  import TaskShadowRow from "./TaskShadowRow.svelte";
+
+  type TaskDndItem = DndItem & {
+    id: string;
+    taskRef?: Task;
+  };
 
   // Reuse immutable empty collections so Svelte doesn't see a new reference every render.
   const EMPTY_TOTALS: Map<string, SessionAggregation> = new Map();
@@ -34,6 +47,13 @@
   let reportingAggregation: SessionAggregation | null = null;
   let hasConcurrentSessions = false;
   let skipNextBlurCommit = false;
+  let childZoneItems: TaskDndItem[] = [];
+  let childDragActive = false;
+  let hasChildRows = false;
+  let hasChildShadow = false;
+
+  const DND_ZONE_TYPE = "task-tree";
+  const DND_FLIP_DURATION_MS = 150;
 
   $: state = $taskStore;
   $: isActive = state.data.activeTaskId === task.id;
@@ -46,6 +66,78 @@
     isActive && latestSession && !latestSession.endedAt
       ? Math.max(0, latestSession.durationMs)
       : 0;
+
+  const findTaskById = (taskId: string): Task | null => {
+    const located = locateTask(state.data.projects, taskId);
+    return located?.task ?? null;
+  };
+
+  const buildChildZoneItems = (children: Task[]): TaskDndItem[] =>
+    children.map((child) => ({
+      id: child.id,
+      taskRef: child,
+    }));
+
+  const ensureTaskRefs = (items: TaskDndItem[]): TaskDndItem[] =>
+    items.map((item) => {
+      if (item[SHADOW_ITEM_MARKER_PROPERTY_NAME]) {
+        return item;
+      }
+      if (item.taskRef && item.taskRef.id === item.id) {
+        return item;
+      }
+      const located = findTaskById(item.id);
+      return located ? { ...item, taskRef: located } : item;
+    });
+
+  $: if (!childDragActive) {
+    childZoneItems = ensureTaskRefs(buildChildZoneItems(task.children));
+  }
+
+  $: {
+    hasChildRows = childZoneItems.some(
+      (item) => !item[SHADOW_ITEM_MARKER_PROPERTY_NAME],
+    );
+    hasChildShadow = childZoneItems.some((item) =>
+      Boolean(item[SHADOW_ITEM_MARKER_PROPERTY_NAME]),
+    );
+  }
+
+  const handleChildConsider = (
+    event: CustomEvent<DndEvent<TaskDndItem>>,
+  ) => {
+    childDragActive = true;
+    childZoneItems = ensureTaskRefs(event.detail.items as TaskDndItem[]);
+  };
+
+  const handleChildFinalize = (
+    event: CustomEvent<DndEvent<TaskDndItem>>,
+  ) => {
+    childZoneItems = ensureTaskRefs(event.detail.items as TaskDndItem[]);
+    childDragActive = false;
+
+    if (event.detail.info.trigger !== TRIGGERS.DROPPED_INTO_ZONE) {
+      return;
+    }
+
+    const orderedItems = (event.detail.items as TaskDndItem[]).filter(
+      (item) => !item[SHADOW_ITEM_MARKER_PROPERTY_NAME],
+    );
+
+    const destinationIndex = orderedItems.findIndex(
+      (item) => item.id === event.detail.info.id,
+    );
+
+    if (destinationIndex === -1) {
+      return;
+    }
+
+    taskStore.moveTaskTo({
+      taskId: event.detail.info.id,
+      destinationParentId: task.id,
+      destinationIndex,
+    });
+  };
 
   // Compose the textarea content from the task title/description so we can round-trip edits.
   const composeTaskContent = (currentTask: Task) => {
@@ -446,17 +538,40 @@
     </div>
   {/if}
 
-  {#if expanded && task.children.length > 0}
-    <div class="space-y-0 border-l border-slate-200 pl-5">
-      {#each task.children as child (child.id)}
-        <svelte:self
-          task={child}
-          depth={depth + 1}
-          {reportingMode}
-          {reportingColumns}
-          {reportingTotals}
-          {reportingConcurrentTaskIds}
-        />
+  {#if expanded}
+    <div
+      class="task-dnd-zone"
+      class:space-y-0={hasChildRows || hasChildShadow}
+      class:border-l={hasChildRows || hasChildShadow}
+      class:border-slate-200={hasChildRows || hasChildShadow}
+      class:pl-5={hasChildRows || hasChildShadow}
+      class:task-dnd-zone--empty={!hasChildRows && !hasChildShadow}
+      use:dndzone={{
+        items: childZoneItems,
+        type: DND_ZONE_TYPE,
+        flipDurationMs: DND_FLIP_DURATION_MS,
+      }}
+      on:consider={handleChildConsider}
+      on:finalize={handleChildFinalize}
+      aria-label={`Subtasks for ${task.title}`}
+    >
+      {#each childZoneItems as childItem (childItem.id)}
+        {#if childItem[SHADOW_ITEM_MARKER_PROPERTY_NAME]}
+          <TaskShadowRow depth={depth + 1} />
+        {:else}
+          {@const resolvedChild =
+            childItem.taskRef ?? findTaskById(childItem.id)}
+          {#if resolvedChild}
+            <svelte:self
+              task={resolvedChild}
+              depth={depth + 1}
+              {reportingMode}
+              {reportingColumns}
+              {reportingTotals}
+              {reportingConcurrentTaskIds}
+            />
+          {/if}
+        {/if}
       {/each}
     </div>
   {/if}

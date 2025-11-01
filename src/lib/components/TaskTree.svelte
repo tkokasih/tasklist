@@ -10,12 +10,24 @@
     type ReportingWarning,
   } from "$lib/stores/reportingSelectors";
   import TaskItem from "./TaskItem.svelte";
-import {
+  import TaskShadowRow from "./TaskShadowRow.svelte";
+  import {
     reportingColumns,
     reportingMode,
     activityScope,
     activityRange,
   } from "$lib/stores/uiState";
+  import {
+    dndzone,
+    SHADOW_ITEM_MARKER_PROPERTY_NAME,
+    TRIGGERS,
+  } from "svelte-dnd-action";
+  import type { DndEvent, Item as DndItem } from "svelte-dnd-action";
+
+  type TaskDndItem = DndItem & {
+    id: string;
+    taskRef?: Task;
+  };
 
   // Render the root project task list and optionally switch into reporting mode.
   export let project: Project | null = null;
@@ -37,6 +49,40 @@ import {
   let reportingTotals: Map<string, SessionAggregation> = EMPTY_TOTALS;
   let reportingWarnings: ReportingWarning[] = EMPTY_WARNINGS;
   let concurrentTaskIds = new Set<string>();
+  let rootZoneItems: TaskDndItem[] = [];
+  let rootDragActive = false;
+  let taskLookup: Map<string, Task> = new Map();
+  let rootRenderList: Task[] = [];
+
+  const DND_ZONE_TYPE = "task-tree";
+  const DND_FLIP_DURATION_MS = 150;
+
+  const indexTasks = (tasks: Task[], map: Map<string, Task>) => {
+    for (const current of tasks) {
+      map.set(current.id, current);
+      if (current.children?.length) {
+        indexTasks(current.children, map);
+      }
+    }
+  };
+
+  const ensureTaskRefs = (items: TaskDndItem[]): TaskDndItem[] =>
+    items.map((item) => {
+      if (item[SHADOW_ITEM_MARKER_PROPERTY_NAME]) {
+        return item;
+      }
+      if (item.taskRef && item.taskRef.id === item.id) {
+        return item;
+      }
+      const located = taskLookup.get(item.id);
+      return located ? { ...item, taskRef: located } : item;
+    });
+
+  const buildZoneItems = (tasks: Task[]): TaskDndItem[] =>
+    tasks.map((task) => ({
+      id: task.id,
+      taskRef: task,
+    }));
 
   const filterTasksForReportingWindow = (
     tasks: Task[],
@@ -115,6 +161,59 @@ import {
     renderTasks.length === 0
       ? "No tasks fall within the selected reporting window."
       : emptyMessage;
+
+  $: {
+    const map = new Map<string, Task>();
+    if (renderProject) {
+      indexTasks(renderProject.tasks, map);
+    }
+    taskLookup = map;
+  }
+
+  $: if (!rootDragActive) {
+    rootZoneItems = ensureTaskRefs(buildZoneItems(renderTasks));
+  }
+
+  $: rootRenderList = rootZoneItems
+    .filter((item) => !item[SHADOW_ITEM_MARKER_PROPERTY_NAME])
+    .map((item) => item.taskRef ?? taskLookup.get(item.id))
+    .filter((candidate): candidate is Task => Boolean(candidate));
+
+  const handleRootConsider = (
+    event: CustomEvent<DndEvent<TaskDndItem>>,
+  ) => {
+    rootDragActive = true;
+    rootZoneItems = ensureTaskRefs(event.detail.items as TaskDndItem[]);
+  };
+
+  const handleRootFinalize = (
+    event: CustomEvent<DndEvent<TaskDndItem>>,
+  ) => {
+    rootZoneItems = ensureTaskRefs(event.detail.items as TaskDndItem[]);
+    rootDragActive = false;
+
+    if (event.detail.info.trigger !== TRIGGERS.DROPPED_INTO_ZONE) {
+      return;
+    }
+
+    const orderedItems = (event.detail.items as TaskDndItem[]).filter(
+      (item) => !item[SHADOW_ITEM_MARKER_PROPERTY_NAME],
+    );
+
+    const destinationIndex = orderedItems.findIndex(
+      (item) => item.id === event.detail.info.id,
+    );
+
+    if (destinationIndex === -1) {
+      return;
+    }
+
+    taskStore.moveTaskTo({
+      taskId: event.detail.info.id,
+      destinationParentId: null,
+      destinationIndex,
+    });
+  };
 </script>
 
 <!-- TaskTree orchestrates the root-level task list, optional reporting headers, and new-task entry for a project. -->
@@ -167,26 +266,43 @@ import {
       </div>
     </div>
 
-    {#if renderTasks.length === 0}
-      <div
-        class="rounded-lg border border-slate-200 bg-slate-50 p-6 text-center text-slate-500"
-      >
-        {scopedEmptyMessage}
-      </div>
-    {:else}
-      <div class="space-y-4">
-        {#each renderTasks as task (task.id)}
-          <TaskItem
-            {task}
-            depth={0}
-            reportingMode={isReportingMode}
-            reportingColumns={reportingDayColumns}
-            {reportingTotals}
-            reportingConcurrentTaskIds={concurrentTaskIds}
-          />
-        {/each}
-      </div>
-    {/if}
+    <div
+      class="task-dnd-zone space-y-4"
+      use:dndzone={{
+        items: rootZoneItems,
+        type: DND_ZONE_TYPE,
+        flipDurationMs: DND_FLIP_DURATION_MS,
+      }}
+      on:consider={handleRootConsider}
+      on:finalize={handleRootFinalize}
+      aria-label="Project tasks"
+    >
+      {#if rootRenderList.length === 0 && !rootDragActive}
+        <div
+          class="rounded-lg border border-slate-200 bg-slate-50 p-6 text-center text-slate-500"
+        >
+          {scopedEmptyMessage}
+        </div>
+      {/if}
+
+      {#each rootZoneItems as item (item.id)}
+        {#if item[SHADOW_ITEM_MARKER_PROPERTY_NAME]}
+          <TaskShadowRow depth={0} />
+        {:else}
+          {@const resolvedTask = item.taskRef ?? taskLookup.get(item.id)}
+          {#if resolvedTask}
+            <TaskItem
+              task={resolvedTask}
+              depth={0}
+              reportingMode={isReportingMode}
+              reportingColumns={reportingDayColumns}
+              {reportingTotals}
+              reportingConcurrentTaskIds={concurrentTaskIds}
+            />
+          {/if}
+        {/if}
+      {/each}
+    </div>
   </div>
 {:else}
   <div

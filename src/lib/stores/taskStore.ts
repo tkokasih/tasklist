@@ -10,6 +10,7 @@ import {
   incrementTaskTime,
   locateTask,
   moveTask,
+  moveTaskTo as moveTaskToInTree,
   deleteTaskSession as deleteTaskSessionInTree,
   indentTask as indentTaskInTree,
   outdentTask as outdentTaskInTree,
@@ -18,6 +19,7 @@ import {
   updateTaskById,
   updateTaskSession as updateTaskSessionInTree,
 } from "$lib/core/taskTree";
+import type { MoveTaskTarget } from "$lib/core/taskTree";
 import {
   deserializeData,
   serializeData,
@@ -836,6 +838,17 @@ export const taskStore = {
   moveTaskDown(taskId: string) {
     withDataUpdate((data) => {
       const result = moveTask(data.projects, taskId, 1);
+      if (!result.changed) {
+        return data;
+      }
+
+      return { ...data, projects: result.projects };
+    });
+  },
+
+  moveTaskTo(target: MoveTaskTarget) {
+    withDataUpdate((data) => {
+      const result = moveTaskToInTree(data.projects, target);
       if (!result.changed) {
         return data;
       }

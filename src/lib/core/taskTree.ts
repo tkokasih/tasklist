@@ -32,6 +32,12 @@ export interface LocatedTask {
   index: number;
 }
 
+export interface MoveTaskTarget {
+  taskId: string;
+  destinationParentId: string | null;
+  destinationIndex: number;
+}
+
 const now = () => new Date().toISOString();
 
 const cloneProjects = (projects: Project[]): Project[] =>
@@ -332,6 +338,109 @@ export const moveTask = (
   });
 
   return { projects: changed ? nextProjects : projects, changed };
+};
+
+const isDescendant = (path: string[], ancestorId: string): boolean =>
+  path.includes(ancestorId);
+
+const clampIndex = (value: number, length: number): number => {
+  if (Number.isNaN(value) || !Number.isFinite(value)) {
+    return length;
+  }
+  if (value < 0) {
+    return 0;
+  }
+  if (value > length) {
+    return length;
+  }
+  return value;
+};
+
+/**
+ * Move a task to an arbitrary parent/index location, preserving immutable contracts.
+ */
+export const moveTaskTo = (
+  projects: Project[],
+  target: MoveTaskTarget,
+): { projects: Project[]; changed: boolean } => {
+  const { taskId, destinationParentId, destinationIndex } = target;
+
+  const located = locateTask(projects, taskId);
+  if (!located) {
+    return { projects, changed: false };
+  }
+
+  const { project, parentIds, index: currentIndex } = located;
+  let destinationParentIds: string[] = [];
+
+  if (destinationParentId) {
+    const destinationParent = locateTask(projects, destinationParentId);
+    if (
+      !destinationParent ||
+      destinationParent.project.id !== project.id ||
+      destinationParent.task.id === taskId ||
+      isDescendant(destinationParent.parentIds, taskId)
+    ) {
+      return { projects, changed: false };
+    }
+
+    destinationParentIds = [
+      ...destinationParent.parentIds,
+      destinationParent.task.id,
+    ];
+  }
+
+  const nextProjects = cloneProjects(projects);
+  const projectRef = nextProjects.find(
+    (candidate) => candidate.id === project.id,
+  );
+  if (!projectRef) {
+    return { projects, changed: false };
+  }
+
+  const sourceContainer = findTaskContainer(projectRef, parentIds);
+  const destinationContainer = findTaskContainer(
+    projectRef,
+    destinationParentIds,
+  );
+  if (!sourceContainer || !destinationContainer) {
+    return { projects, changed: false };
+  }
+
+  if (
+    sourceContainer === destinationContainer &&
+    destinationIndex === currentIndex
+  ) {
+    return { projects, changed: false };
+  }
+
+  const movingTask = sourceContainer[currentIndex];
+  if (!movingTask) {
+    return { projects, changed: false };
+  }
+
+  const timestamp = now();
+  const [removedTask] = sourceContainer.splice(currentIndex, 1);
+  if (!removedTask) {
+    return { projects, changed: false };
+  }
+
+  const preRemovalIndex = clampIndex(
+    destinationIndex,
+    destinationContainer.length,
+  );
+
+  const updatedTask = { ...removedTask, updatedAt: timestamp };
+  const insertionIndex = clampIndex(
+    preRemovalIndex,
+    destinationContainer.length,
+  );
+  destinationContainer.splice(insertionIndex, 0, updatedTask);
+
+  touchAncestors(projectRef, parentIds, timestamp);
+  touchAncestors(projectRef, destinationParentIds, timestamp);
+
+  return { projects: nextProjects, changed: true };
 };
 
 const appendTaskRecursive = (

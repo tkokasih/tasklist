@@ -12,6 +12,7 @@ import {
   incrementTaskTime,
   locateTask,
   moveTask,
+  moveTaskTo,
   setTaskStatus,
   updateTaskById,
   updateTaskSession,
@@ -167,6 +168,92 @@ describe("taskTree core helpers", () => {
 
     expect(moved.changed).toBe(false);
     expect(moved.projects).toBe(projects);
+  });
+
+  it("moves a task to a new parent and index", () => {
+    const project = projectWithTasks();
+    const projects = [project];
+
+    vi.setSystemTime(new Date(laterTime));
+
+    const result = moveTaskTo(projects, {
+      taskId: "task-child",
+      destinationParentId: null,
+      destinationIndex: 1,
+    });
+
+    expect(result.changed).toBe(true);
+    const updatedProject = result.projects[0];
+    expect(updatedProject.updatedAt).toBe(laterTime);
+    expect(updatedProject.tasks.map((task) => task.id)).toEqual([
+      "task-root",
+      "task-child",
+      "task-2",
+    ]);
+    const updatedRoot = updatedProject.tasks[0];
+    expect(updatedRoot.children).toHaveLength(0);
+    expect(updatedRoot.updatedAt).toBe(laterTime);
+    const movedTask = updatedProject.tasks[1];
+    expect(movedTask.updatedAt).toBe(laterTime);
+  });
+
+  it("moves a task downward within the same parent without skipping", () => {
+    const project = projectWithTasks();
+    const projects = [project];
+
+    vi.setSystemTime(new Date(laterTime));
+
+    const result = moveTaskTo(projects, {
+      taskId: "task-root",
+      destinationParentId: null,
+      destinationIndex: 1,
+    });
+
+    expect(result.changed).toBe(true);
+    const updatedProject = result.projects[0];
+    expect(updatedProject.updatedAt).toBe(laterTime);
+    expect(updatedProject.tasks.map((task) => task.id)).toEqual([
+      "task-2",
+      "task-root",
+    ]);
+    const [, movedTask] = updatedProject.tasks;
+    expect(movedTask.updatedAt).toBe(laterTime);
+  });
+
+  it("moves a task under a different parent", () => {
+    const project = projectWithTasks();
+    const projects = [project];
+
+    vi.setSystemTime(new Date(laterTime));
+
+    const result = moveTaskTo(projects, {
+      taskId: "task-2",
+      destinationParentId: "task-root",
+      destinationIndex: 0,
+    });
+
+    expect(result.changed).toBe(true);
+    const updatedProject = result.projects[0];
+    const parent = updatedProject.tasks[0];
+    expect(parent.children).toHaveLength(2);
+    const [firstChild] = parent.children;
+    expect(firstChild.id).toBe("task-2");
+    expect(parent.updatedAt).toBe(laterTime);
+    expect(firstChild.updatedAt).toBe(laterTime);
+  });
+
+  it("prevents moving a task into its own descendant", () => {
+    const project = projectWithTasks();
+    const projects = [project];
+
+    const result = moveTaskTo(projects, {
+      taskId: "task-root",
+      destinationParentId: "task-child",
+      destinationIndex: 0,
+    });
+
+    expect(result.changed).toBe(false);
+    expect(result.projects).toBe(projects);
   });
 
   it("adds new tasks at root and as children", () => {

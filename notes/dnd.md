@@ -106,10 +106,12 @@ Adopt **Option A**. It keeps the interaction fluid, aligns with user expectation
 - Interaction with snapshots/import/export—ensure drag updates still mark `updatedAt`.
 
 ## Implementation To-Do
-- [ ] **Data layer:** Implement and test `moveTaskTo` in `taskTree.ts`, surface it through `taskStore`, and ensure updated tasks touch `updatedAt`.
-- [ ] **Drag context:** Scaffold shared DnD state (`taskDragContext`) to coordinate active drag metadata across `TaskItem` instances.
-- [ ] **UI affordance:** Add the drag handle, placeholder styling, and horizontal threshold logic to `TaskRowSummary`/`TaskItem`.
-  - [x] Drag handle scaffold in `TaskRowSummary`; preview ships in-progress (2025-10-31).
+
+- [x] **Data layer:** Implement and test `moveTaskTo` in `taskTree.ts`, surface it through `taskStore`, and ensure updated tasks touch `updatedAt`.
+- [x] **Drag integration:** Replace the bespoke `taskDragContext` with `svelte-dnd-action` zones and map finalize events into `taskStore.moveTaskTo`.
+- [x] **UI affordance:** Keep the drag handle affordance, surface shadow rows during reorders, and preserve existing action buttons.
 - [ ] **Auto behaviors:** Implement hover-to-expand, auto-scroll, and indentation snapping animations with respect for `prefers-reduced-motion`.
+  - [ ] Hover-to-expand/indent thresholds were removed during the library swap—needs a follow-up pass.
 - [ ] **Accessibility:** Announce drag state changes, expose keyboard equivalents via the handle, and verify focus management during abort/drop.
-- [ ] **Validation:** Run targeted Vitest suites and capture a lightweight manual test script (desktop + touch) before promoting the feature flag.
+  - [ ] Reintroduce screen-reader messaging and document keyboard drag workflow.
+- [x] **Validation:** Run targeted Vitest suites and capture a lightweight manual test script (desktop + touch) before promoting the feature flag.
