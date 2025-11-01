@@ -29,6 +29,8 @@ const appVersion =
     ? packageJson.version
     : "0.0.0";
 
+const buildTimestampIso = new Date().toISOString();
+
 const resolveHostname = () => {
   const explicitHost = process.env.VITE_DEV_HOST?.trim();
   if (explicitHost) return explicitHost;
@@ -61,6 +63,7 @@ export default defineConfig({
   define: {
     __APP_GIT_COMMIT__: JSON.stringify(gitCommitHash),
     __APP_VERSION__: JSON.stringify(appVersion),
+    __APP_BUILD_TIMESTAMP__: JSON.stringify(buildTimestampIso),
   },
   server: {
     host: resolvedHost,

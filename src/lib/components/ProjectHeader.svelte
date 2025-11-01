@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { tick } from "svelte";
-  import { APP_VERSION_DISPLAY } from "$lib/core/version";
+  import { onMount, tick } from "svelte";
+  import { APP_BUILD_TIMESTAMP, APP_VERSION_DISPLAY } from "$lib/core/version";
   import { formatTimestamp } from "$lib/core/time";
   import { taskStore } from "$lib/stores/taskStore";
   import { activeProject } from "$lib/stores/taskSelectors";
@@ -11,6 +11,8 @@
   let newProjectTitle = "";
   let titleInput: HTMLInputElement | null = null;
   let createInput: HTMLInputElement | null = null;
+  let buildTimestampDisplay = "";
+  let versionDisplayLine = APP_VERSION_DISPLAY;
 
   $: project = $activeProject;
   $: state = $taskStore;
@@ -32,6 +34,10 @@
       createInput?.select();
     });
   }
+
+  $: versionDisplayLine = buildTimestampDisplay
+    ? `${APP_VERSION_DISPLAY} | ${buildTimestampDisplay}`
+    : APP_VERSION_DISPLAY;
 
   const commitTitle = () => {
     if (!project) {
@@ -70,6 +76,36 @@
 
     taskStore.deleteProject(project.id);
   };
+
+  const formatBuildTimestamp = (iso: string): string => {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+      return "";
+    }
+
+    const weekday = date.toLocaleDateString(undefined, { weekday: "short" });
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const tzOffsetMinutes = -date.getTimezoneOffset();
+    const tzSign = tzOffsetMinutes >= 0 ? "+" : "-";
+    const tzHours = String(Math.floor(Math.abs(tzOffsetMinutes) / 60)).padStart(
+      2,
+      "0",
+    );
+    const tzMinutes = String(Math.abs(tzOffsetMinutes) % 60).padStart(2, "0");
+
+    return `${weekday}, ${year}-${month}-${day} ${hours}:${minutes} (${tzSign}${tzHours}:${tzMinutes})`;
+  };
+
+  onMount(() => {
+    if (!APP_BUILD_TIMESTAMP) {
+      return;
+    }
+    buildTimestampDisplay = formatBuildTimestamp(APP_BUILD_TIMESTAMP);
+  });
 </script>
 
 <section
@@ -116,8 +152,8 @@
           Select or create a project to begin managing tasks.
         </p>
       {/if}
-      <p class="text-xs tracking-wide text-slate-400 uppercase">
-        {APP_VERSION_DISPLAY}
+      <p class="text-xs tracking-wide text-slate-400">
+        {versionDisplayLine}
       </p>
     </div>
 
