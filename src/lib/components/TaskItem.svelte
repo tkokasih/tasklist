@@ -203,8 +203,7 @@
   // 3. Editor focus returns afterward when users triggered the shortcut from an editor.
   const runStructuralCommand = (command: () => void) => {
     const wasEditing = editing;
-    const isBlankDraft =
-      isDraftNewTask && draftContent.trim().length === 0;
+    const isBlankDraft = isDraftNewTask && draftContent.trim().length === 0;
 
     if (isBlankDraft) {
       skipNextBlurCommit = true;

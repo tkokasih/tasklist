@@ -110,10 +110,8 @@
         <span class="task-row__drag-handle-icon" aria-hidden="true">⋮⋮</span>
       </button>
 
-
   <div class="flex min-w-0 flex-1 items-center gap-2">
     <div class="flex min-w-0 flex-1 items-center gap-1.5">
-
       {#if editing}
         <textarea
           class="task-row__title-input"
