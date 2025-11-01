@@ -52,7 +52,7 @@
   export let onMoveUp: () => void = noop;
   export let onMoveDown: () => void = noop;
   export let onComplete: () => void = noop;
-  export let onOpenSubtaskForm: () => void = noop;
+  export let onCreateSubtask: () => void = noop;
   export let onTitleKeydown: (event: KeyboardEvent) => void = noop;
   export let onSelect: () => void = noop;
   export let reportingMode = false;
@@ -225,7 +225,7 @@
         <button
           class="task-row__action task-row__action--ghost"
           type="button"
-          on:click={onOpenSubtaskForm}
+          on:click={onCreateSubtask}
         >
           <span aria-hidden="true">＋</span>
           <span class="sr-only sm:hidden">Add sub-task</span>

@@ -2,7 +2,6 @@
   import { onMount, tick } from "svelte";
   import type { Task } from "$lib/core/taskTypes";
   import type { SessionAggregation } from "$lib/core/reporting/timeBuckets";
-  import { formatTimestamp } from "$lib/core/time";
   import { taskStore } from "$lib/stores/taskStore";
   import TaskRowSummary from "./TaskRowSummary.svelte";
   import type { ReportingColumnDefinition } from "$lib/stores/uiState";
@@ -34,11 +33,7 @@
   let expanded = true;
   let editing = false;
   let draftContent = "";
-  let showDetails = false;
-  let addingSubtask = false;
-  let subtaskTitle = "";
   let titleField: HTMLTextAreaElement | null = null;
-  let subtaskInput: HTMLInputElement | null = null;
   let isDraftNewTask = false;
   let wasEditing = false;
   let initialContentSnapshot = "";
@@ -165,12 +160,6 @@
 
     wasEditing = editing;
   }
-  $: if (addingSubtask) {
-    tick().then(() => {
-      subtaskInput?.focus();
-    });
-  }
-
   // When another component requests focus here, reopen the editor and reapply focus after the DOM updates.
   $: if (state.focusedEditorTaskId === task.id) {
     if (!editing) {
@@ -328,24 +317,14 @@
     }
   };
 
-  const openSubtaskForm = () => {
-    addingSubtask = true;
-    showDetails = true;
-  };
-
-  const resetSubtaskForm = () => {
-    addingSubtask = false;
-    subtaskTitle = "";
-  };
-
-  const submitSubtask = () => {
-    if (!subtaskTitle.trim()) {
+  const createSubtask = () => {
+    const createdTaskId = taskStore.createSiblingTaskAfter(task.id);
+    if (!createdTaskId) {
       return;
     }
-    taskStore.addTask(subtaskTitle, task.id);
+    taskStore.indentTask(createdTaskId);
     taskStore.setTaskExpanded(task.id, true);
-    subtaskTitle = "";
-    addingSubtask = false;
+    taskStore.focusTaskEditor(createdTaskId);
   };
 
   // Support multiline editing, quick sibling creation, and indent/outdent shortcuts.
@@ -446,7 +425,7 @@
   ).includes(task.id);
 </script>
 
-<!-- TaskItem renders a single task row, its inline details/subtask form, and recursively nests any child tasks. -->
+<!-- TaskItem renders a single task row and recursively nests any child tasks. -->
 
 <div class="space-y-0 mb-0" style={`margin-left: ${indent}rem`}>
   <TaskRowSummary
@@ -476,67 +455,8 @@
     onMoveUp={handleMoveUp}
     onMoveDown={handleMoveDown}
     onComplete={handleComplete}
-    onOpenSubtaskForm={openSubtaskForm}
+    onCreateSubtask={createSubtask}
   />
-
-  {#if showDetails || addingSubtask}
-    <!-- Inline detail panel mirrors the sidebar card so users can stay in context while editing. -->
-    <div class="task-detail-panel">
-      {#if showDetails}
-        <div class="task-meta-grid">
-          <span>
-            <strong>Created:</strong>
-            {formatTimestamp(task.createdAt)}
-          </span>
-          <span>
-            <strong>Updated:</strong>
-            {formatTimestamp(task.updatedAt)}
-          </span>
-          {#if task.lastStartedAt}
-            <span>
-              <strong>Last started:</strong>
-              {formatTimestamp(task.lastStartedAt)}
-            </span>
-          {/if}
-          {#if task.archivedAt}
-            <span>
-              <strong>Archived:</strong>
-              {formatTimestamp(task.archivedAt)}
-            </span>
-          {/if}
-        </div>
-      {/if}
-
-      {#if addingSubtask}
-        <form
-          class="task-subtask-form"
-          on:submit|preventDefault={submitSubtask}
-        >
-          <input
-            class="task-subtask-form__input"
-            placeholder="Sub-task title"
-            bind:value={subtaskTitle}
-            bind:this={subtaskInput}
-          />
-          <div class="flex items-center gap-2">
-            <button
-              class="task-row__action task-row__action--primary"
-              type="submit"
-            >
-              Add
-            </button>
-            <button
-              class="task-row__action task-row__action--ghost"
-              type="button"
-              on:click={resetSubtaskForm}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      {/if}
-    </div>
-  {/if}
 
   {#if expanded}
     <div

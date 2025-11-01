@@ -297,21 +297,6 @@
     @apply bg-blue-50/80;
   }
 
-  .task-detail-panel {
-    @apply rounded-md border border-slate-200 bg-white/70 px-3 py-3 text-xs text-slate-600 shadow-inner;
-  }
-
-  .task-meta-grid {
-    @apply grid gap-2 md:grid-cols-2;
-  }
-
-  .task-subtask-form {
-    @apply mt-3 flex flex-col gap-2 sm:flex-row sm:items-center;
-  }
-
-  .task-subtask-form__input {
-    @apply flex-1 rounded border border-slate-300 px-3 py-1.5 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-200 focus:outline-none;
-  }
 }
 
 .side-panel-scroll {
