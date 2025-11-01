@@ -215,10 +215,17 @@ const beginTicking = () => {
           return { ...state, lastTickAt: nowMs };
         }
 
-        const nextData = touchData({
+        const baseData: TaskData = {
           ...state.data,
           projects,
-        });
+        };
+        const lastPersistMs = state.data.lastSavedAt
+          ? Date.parse(state.data.lastSavedAt)
+          : Number.NaN;
+        // Persist to LocalStorage at most once per minute during active ticking.
+        const shouldPersist =
+          Number.isNaN(lastPersistMs) || nowMs - lastPersistMs >= 60_000;
+        const nextData = shouldPersist ? touchData(baseData) : baseData;
 
         return { ...state, data: nextData, lastTickAt: nowMs };
       }),
