@@ -6,7 +6,7 @@
   const indent = clampIndent(depth);
 </script>
 
-<div class="space-y-0 mb-0" style={`margin-left: ${indent}rem`}>
+<div class="mb-0 space-y-0" style={`margin-left: ${indent}rem`}>
   <div class="task-shadow-row" aria-hidden="true">
     <div class="task-shadow-row__track">
       <div class="task-shadow-row__pill task-shadow-row__pill--wide"></div>

@@ -98,16 +98,12 @@
     );
   }
 
-  const handleChildConsider = (
-    event: CustomEvent<DndEvent<TaskDndItem>>,
-  ) => {
+  const handleChildConsider = (event: CustomEvent<DndEvent<TaskDndItem>>) => {
     childDragActive = true;
     childZoneItems = ensureTaskRefs(event.detail.items as TaskDndItem[]);
   };
 
-  const handleChildFinalize = (
-    event: CustomEvent<DndEvent<TaskDndItem>>,
-  ) => {
+  const handleChildFinalize = (event: CustomEvent<DndEvent<TaskDndItem>>) => {
     childZoneItems = ensureTaskRefs(event.detail.items as TaskDndItem[]);
     childDragActive = false;
 
@@ -420,14 +416,12 @@
       reportingConcurrentTaskIds.has(task.id);
   }
 
-  $: expanded = !(
-    state.data.collapsedTaskIds ?? []
-  ).includes(task.id);
+  $: expanded = !(state.data.collapsedTaskIds ?? []).includes(task.id);
 </script>
 
 <!-- TaskItem renders a single task row and recursively nests any child tasks. -->
 
-<div class="space-y-0 mb-0" style={`margin-left: ${indent}rem`}>
+<div class="mb-0 space-y-0" style={`margin-left: ${indent}rem`}>
   <TaskRowSummary
     {task}
     {expanded}

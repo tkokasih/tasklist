@@ -70,7 +70,7 @@
 
   .task-row__drag-handle {
     @apply flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border-transparent bg-transparent text-slate-400 transition;
-    @apply cursor-grab select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300;
+    @apply cursor-grab select-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:outline-none;
     touch-action: none;
   }
 
@@ -296,7 +296,6 @@
     ):not(.task-row--completed):not(.task-row--archived) {
     @apply bg-blue-50/80;
   }
-
 }
 
 .side-panel-scroll {

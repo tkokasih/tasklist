@@ -102,8 +102,15 @@
       const aggregation = totals.get(task.id);
       const totalMs = aggregation?.totalMs ?? 0;
       const includeActive = task.status === "in-progress";
+      // Keep draft placeholders visible so users can finish editing new tasks even when activity filters exclude them.
+      const includeDraft = task.title.trim().length === 0;
 
-      if (totalMs > 0 || scopedChildren.length > 0 || includeActive) {
+      if (
+        includeDraft ||
+        totalMs > 0 ||
+        scopedChildren.length > 0 ||
+        includeActive
+      ) {
         filtered.push({
           ...task,
           children: scopedChildren,
@@ -148,11 +155,9 @@
   $: scopedTasks =
     hasScopedProject && project
       ? filterTasksForReportingWindow(project.tasks, reportingTotals)
-      : project?.tasks ?? [];
+      : (project?.tasks ?? []);
   $: renderProject =
-    hasScopedProject && project
-      ? { ...project, tasks: scopedTasks }
-      : project;
+    hasScopedProject && project ? { ...project, tasks: scopedTasks } : project;
   $: renderTasks = renderProject?.tasks ?? [];
   $: scopedEmptyMessage =
     project &&
@@ -179,16 +184,12 @@
     .map((item) => item.taskRef ?? taskLookup.get(item.id))
     .filter((candidate): candidate is Task => Boolean(candidate));
 
-  const handleRootConsider = (
-    event: CustomEvent<DndEvent<TaskDndItem>>,
-  ) => {
+  const handleRootConsider = (event: CustomEvent<DndEvent<TaskDndItem>>) => {
     rootDragActive = true;
     rootZoneItems = ensureTaskRefs(event.detail.items as TaskDndItem[]);
   };
 
-  const handleRootFinalize = (
-    event: CustomEvent<DndEvent<TaskDndItem>>,
-  ) => {
+  const handleRootFinalize = (event: CustomEvent<DndEvent<TaskDndItem>>) => {
     rootZoneItems = ensureTaskRefs(event.detail.items as TaskDndItem[]);
     rootDragActive = false;
 

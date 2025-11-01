@@ -64,7 +64,10 @@ export const filterTasksByStatus = (
   for (const task of tasks) {
     const { tasks: filteredChildren, changed: childrenChanged } =
       filterTasksByStatus(task.children, allowed);
-    const includeSelf = allowed.has(task.status);
+    // Treat blank titles as draft placeholders: they represent newly created tasks
+    // that should remain visible even when their eventual status would be filtered out.
+    const includeSelf =
+      task.title.trim().length === 0 || allowed.has(task.status);
 
     if (!includeSelf && filteredChildren.length === 0) {
       changed = true;
