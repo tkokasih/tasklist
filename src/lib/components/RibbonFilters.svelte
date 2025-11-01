@@ -83,10 +83,8 @@
 
 <div class="space-y-3 text-sm text-slate-600">
   <div class="flex flex-wrap items-end gap-4">
-    <div
-      class="flex min-w-[16rem] flex-wrap items-center gap-3"
-    >
-      <span class="text-xs font-medium uppercase tracking-wide text-slate-400"
+    <div class="flex min-w-[16rem] flex-wrap items-center gap-3">
+      <span class="text-xs font-medium tracking-wide text-slate-400 uppercase"
         >Status</span
       >
       <div
@@ -114,7 +112,7 @@
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
-      <span class="text-xs font-medium uppercase tracking-wide text-slate-400"
+      <span class="text-xs font-medium tracking-wide text-slate-400 uppercase"
         >Activity In</span
       >
       <div
@@ -127,9 +125,7 @@
           <button
             type="button"
             class={`px-3 py-1 transition-colors ${
-              selected
-                ? "bg-slate-900 text-white"
-                : "hover:bg-slate-200/80"
+              selected ? "bg-slate-900 text-white" : "hover:bg-slate-200/80"
             }`}
             on:click={() => setActivityRangePreset(preset.id)}
             aria-pressed={selected}
@@ -180,7 +176,7 @@
     </div>
 
     <div class="ml-auto flex flex-wrap items-center gap-2">
-      <span class="text-xs font-medium uppercase tracking-wide text-slate-600"
+      <span class="text-xs font-medium tracking-wide text-slate-600 uppercase"
         >Reporting</span
       >
       <button

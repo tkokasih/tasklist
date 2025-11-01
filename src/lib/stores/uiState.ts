@@ -24,8 +24,7 @@ export interface ReportingColumnDefinition {
   isWeekend: boolean;
 }
 
-const DEFAULT_ACTIVITY_RANGE_PRESET: ActivityRangePresetId =
-  "last-seven-days";
+const DEFAULT_ACTIVITY_RANGE_PRESET: ActivityRangePresetId = "last-seven-days";
 
 export const ACTIVITY_RANGE_PRESETS: ActivityRangePresetDefinition[] = [
   {
@@ -115,16 +114,16 @@ export const activityRange = derived(activityRangePresetWritable, (preset) =>
   buildPresetRange(preset),
 );
 
-export const activityScope = derived(activityRangePresetWritable, (preset) =>
-  preset !== "all",
+export const activityScope = derived(
+  activityRangePresetWritable,
+  (preset) => preset !== "all",
 );
 
 const computeReportingColumns = () =>
   buildColumnsForRange(buildPresetRange("last-seven-days"));
 
-export const reportingColumns = derived(
-  reportingMode,
-  () => computeReportingColumns(),
+export const reportingColumns = derived(reportingMode, () =>
+  computeReportingColumns(),
 );
 
 export const toggleReportingMode = () => {

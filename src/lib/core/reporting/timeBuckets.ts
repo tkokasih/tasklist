@@ -226,4 +226,6 @@ export const sessionBucketKey = (timestampMs: number) => {
 };
 
 export const sessionBucketKeyForLocalDate = (date: Date) =>
-  sessionBucketKey(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  sessionBucketKey(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
+  );

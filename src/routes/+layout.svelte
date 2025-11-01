@@ -15,11 +15,13 @@
       });
     }
 
-    const launchQueue = (window as typeof window & {
-      launchQueue?: {
-        setConsumer?: (consumer: (params: unknown) => void) => void;
-      };
-    }).launchQueue;
+    const launchQueue = (
+      window as typeof window & {
+        launchQueue?: {
+          setConsumer?: (consumer: (params: unknown) => void) => void;
+        };
+      }
+    ).launchQueue;
 
     launchQueue?.setConsumer?.((params: unknown) => {
       const launchParams = params as
