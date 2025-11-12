@@ -146,26 +146,28 @@
       {/if}
 
       <div class="task-row__timers">
-        <span class="inline-flex items-center gap-1">
-          <span aria-hidden="true">⏱</span>
-          {#if reportingMode}
-            <span>Range {reportingRangeTotalLabel}</span>
-          {:else}
-            <span>Total {formatDuration(task.timeSpentMs)}</span>
-          {/if}
-        </span>
         {#if reportingMode}
+          <span class="inline-flex items-center gap-1">
+            <span aria-hidden="true">⏱</span>
+            <span>Range {reportingRangeTotalLabel}</span>
+          </span>
           <span
             class="inline-flex items-center gap-1 text-xs text-slate-500 sm:text-sm"
           >
             <span aria-hidden="true">∞</span>
             <span>Lifetime {formatDuration(task.timeSpentMs)}</span>
           </span>
-        {/if}
-        {#if isActive && latestSession}
-          <span class="inline-flex items-center gap-1 text-blue-600">
-            <span aria-hidden="true">•</span>
-            <span>Session {formatDuration(activeSessionElapsed)}</span>
+        {:else}
+          <span
+            class={`inline-flex items-center gap-1 ${
+              isActive && latestSession ? "text-blue-600" : ""
+            }`}
+          >
+            <span aria-hidden="true">⏱</span>
+            {#if isActive && latestSession}
+              <span>Session {formatDuration(activeSessionElapsed)} | </span>
+            {/if}
+            <span>Total {formatDuration(task.timeSpentMs)}</span>
           </span>
         {/if}
       </div>
@@ -201,21 +203,17 @@
         {/if}
       </div>
     {:else}
-      <div class="task-row__actions">
+      <div class={`task-row__actions ${isActive ? "task-row__actions--tracking" : ""}`}>
         <button
           class={`task-row__action task-row__action--primary ${isActive ? "is-active" : ""}`}
           type="button"
           on:click={onStartOrPause}
         >
-          {#if isActive}
-            <span aria-hidden="true">⏸</span>
-            <span class="hidden sm:inline">Pause</span>
-            <span class="sr-only sm:hidden">Pause task</span>
-          {:else}
-            <span aria-hidden="true">▶</span>
-            <span class="hidden sm:inline">Play</span>
-            <span class="sr-only sm:hidden">Start task</span>
-          {/if}
+          <span aria-hidden="true">⏱</span>
+          <span class="hidden sm:inline">Track</span>
+          <span class="sr-only sm:hidden">
+            {isActive ? "Stop tracking task" : "Track task"}
+          </span>
         </button>
 
         <button
