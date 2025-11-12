@@ -10,7 +10,7 @@ import {
   serializeSnapshots,
 } from "./persistence";
 import { DEFAULT_STATUS_FILTERS } from "./taskTree";
-import type { TaskData, TaskSnapshot } from "./taskTypes";
+import type { Task, TaskData, TaskSnapshot } from "./taskTypes";
 
 const sampleData: TaskData = {
   projects: [
@@ -106,5 +106,33 @@ describe("persistence helpers", () => {
 
     const parsed = parseImportedText(json);
     expect(parsed).toEqual(sampleData);
+  });
+
+  it("migrates legacy payloads to include focus metadata", () => {
+    const legacyTask = {
+      id: "task-legacy",
+      title: "Legacy",
+      status: "idle" as const,
+      children: [],
+      sessions: [],
+      timeSpentMs: 0,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+    } as unknown as Task;
+
+    const legacyData: TaskData = {
+      ...sampleData,
+      projects: [
+        {
+          ...sampleData.projects[0],
+          tasks: [legacyTask],
+        },
+      ],
+    };
+
+    const envelope = JSON.stringify({ version: 1, data: legacyData });
+    const parsed = deserializeData(envelope);
+    const task = parsed.projects[0].tasks[0];
+    expect(task.isFocused).toBe(false);
   });
 });

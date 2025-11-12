@@ -1,7 +1,7 @@
 /**
  * LocalStorage and import/export helpers for the Tasklist data model.
  */
-import type { TaskData, TaskSnapshot } from "./taskTypes";
+import type { Task, TaskData, TaskSnapshot } from "./taskTypes";
 
 /** LocalStorage key for the persisted TaskData envelope. */
 export const STORAGE_KEY = "tasklist:data";
@@ -10,7 +10,7 @@ export const STORAGE_KEY = "tasklist:data";
 export const SNAPSHOT_STORAGE_KEY = "tasklist:snapshots";
 
 /** Bump this when stored structures change; drives migration logic. */
-export const CURRENT_DATA_VERSION = 1;
+export const CURRENT_DATA_VERSION = 2;
 
 interface PersistedEnvelope {
   version: number;
@@ -26,9 +26,37 @@ const isEnvelope = (value: unknown): value is PersistedEnvelope =>
       "data" in value,
   );
 
+const applyToTasks = (tasks: Task[], transform: (task: Task) => Task): Task[] =>
+  tasks.map((task) => {
+    const nextChildren = Array.isArray(task.children)
+      ? applyToTasks(task.children, transform)
+      : [];
+
+    return transform({ ...task, children: nextChildren });
+  });
+
+const ensureFocusFlag = (data: TaskData): TaskData => ({
+  ...data,
+  projects: data.projects.map((project) => ({
+    ...project,
+    tasks: applyToTasks(project.tasks ?? [], (task) => ({
+      ...task,
+      isFocused: Boolean((task as Task & { isFocused?: boolean }).isFocused),
+    })),
+  })),
+});
+
 const migrateStep = (fromVersion: number, data: TaskData): TaskData => {
-  // Placeholder: future migrations will transform data between versions.
-  return data;
+  switch (fromVersion) {
+    case 0:
+      // Version 0 predates envelopes; no structural changes needed.
+      return data;
+    case 1:
+      // Version 2 introduces per-task focus metadata.
+      return ensureFocusFlag(data);
+    default:
+      return data;
+  }
 };
 
 /**

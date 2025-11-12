@@ -15,7 +15,8 @@
 - [ ] Implement optional ancestor one-liner UI that can expand on demand without exiting Focus Mode.
 - [ ] Provide a compact focus summary surface (e.g., sidebar card or ribbon status) with quick clear/promote actions.
 - [ ] Finalize the user-facing label for focused tasks (e.g., Spotlight, Priority Pick) and keep copy consistent across UI.
-- [ ] Cover persistence flows: import/export payloads, snapshots, and LocalStorage migrations for new focus fields.
+- [x] Cover persistence flows: import/export payloads, snapshots, and LocalStorage migrations for new focus fields.
+  - 2025-11-12: Added data-version migration plus tests to ensure `isFocused` survives exports/imports and snapshot restores.
 - [ ] Add derived selectors/tests ensuring timers, archives, and deletions automatically drop focus flags.
 - [ ] QA checklist: keyboard selection, mobile layout, and warning state when users exceed recommended focused tasks.
 
