@@ -2,7 +2,7 @@
 
 ## Current State
 
-- Pointer users rely on Up/Down buttons in `TaskRowSummary.svelte:220` and must repeat clicks to traverse long lists.
+- Pointer users now rely solely on the drag handle (up/down buttons were removed from `TaskRowSummary.svelte` on 2025-11-12 after proving redundant for most workflows).
 - Keyboard shortcuts already support reorder (`Alt+↑/↓`), indent (`Alt/Shift+Tab`), and structural safety via `runStructuralCommand` in `TaskItem.svelte:184`.
 - Task hierarchy is shallow in most projects but can become deeply nested; `TaskItem` clamps visual indent to `4.4/3rem`.
 - Data layer only reorders within the current parent (`moveTask`) or single-level indent/outdent transformations; no generic “move to arbitrary parent/index” helper yet.

@@ -207,6 +207,29 @@
     @apply border-slate-300 text-slate-400 hover:bg-slate-200;
   }
 
+  .task-row__selection-indicator {
+    @apply relative ml-1 flex h-7 w-5 flex-shrink-0 items-center justify-center text-base text-slate-300 transition;
+  }
+
+  .task-row__selection-indicator::after {
+    content: "";
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 6px solid currentColor;
+    opacity: 0;
+    transform: translateX(-1px);
+    transition: opacity 150ms ease, transform 150ms ease;
+  }
+
+  .task-row__selection-indicator.is-selected {
+    @apply text-slate-500;
+  }
+
+  .task-row__selection-indicator.is-selected::after {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
   .task-dnd-zone {
     min-height: 0.5rem;
     position: relative;

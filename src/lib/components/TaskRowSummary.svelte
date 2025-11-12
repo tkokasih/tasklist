@@ -49,8 +49,6 @@
   export let onStartOrPause: () => void = noop;
   export let onArchive: () => void = noop;
   export let onCommitTitle: () => void = noop;
-  export let onMoveUp: () => void = noop;
-  export let onMoveDown: () => void = noop;
   export let onComplete: () => void = noop;
   export let onCreateSubtask: () => void = noop;
   export let onToggleFocus: () => void = noop;
@@ -267,24 +265,11 @@
           <span class="hidden sm:inline">Archive</span>
         </button>
 
-        <button
-          class="task-row__action task-row__action--ghost"
-          type="button"
-          on:click={onMoveUp}
-          aria-label="Move task up"
-        >
-          ↑
-        </button>
-
-        <button
-          class="task-row__action task-row__action--ghost"
-          type="button"
-          on:click={onMoveDown}
-          aria-label="Move task down"
-        >
-          ↓
-        </button>
       </div>
     {/if}
+    <span
+      class={`task-row__selection-indicator ${isSelected ? "is-selected" : ""}`}
+      aria-hidden="true"
+    ></span>
   </div>
 </div>

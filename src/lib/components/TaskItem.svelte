@@ -451,8 +451,6 @@
     onToggleFocus={handleToggleFocus}
     onCommitTitle={commitTaskContent}
     onTitleKeydown={handleTitleKeydown}
-    onMoveUp={handleMoveUp}
-    onMoveDown={handleMoveDown}
     onComplete={handleComplete}
     onCreateSubtask={createSubtask}
   />
