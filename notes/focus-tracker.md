@@ -18,7 +18,8 @@
 - [ ] Finalize the user-facing label for focused tasks (e.g., Spotlight, Priority Pick) and keep copy consistent across UI.
 - [x] Cover persistence flows: import/export payloads, snapshots, and LocalStorage migrations for new focus fields.
   - 2025-11-12: Added data-version migration plus tests to ensure `isFocused` survives exports/imports and snapshot restores.
-- [ ] Add derived selectors/tests ensuring timers, archives, and deletions automatically drop focus flags.
+- [x] Add derived selectors/tests ensuring timers, archives, and deletions automatically drop focus flags.
+  - 2025-11-12: Added `focusedTasks`/`focusedTaskIds` selectors plus store tests covering completion, archive, and delete flows.
 - [ ] QA checklist: keyboard selection, mobile layout, and warning state when users exceed recommended focused tasks.
 
 ## Notes
@@ -27,3 +28,4 @@
 - Current implementation plan keeps per-task metadata to a single `isFocused` boolean; revisit Today/Week scopes later if we reintroduce tiered focus.
 - Naming brainstorm to date: "Priority" and "Spotlight" both read well as nouns and verbs ("Add to Priority"); keep watching for better language.
 - 2025-11-12: Added basic focus toggle button plus styling and persisted boolean flag via Codex pass.
+- 2025-11-12: Focus-mode derived selectors and regression tests confirm timers/archives/deletes drop the flag automatically.

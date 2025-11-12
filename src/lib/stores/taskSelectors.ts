@@ -4,10 +4,7 @@ import type { Project, Task, TaskStatus } from "$lib/core/taskTypes";
 import { filterTasksByStatus } from "$lib/core/taskFilters";
 import { taskStore } from "./taskStore";
 import { focusMode } from "./uiState";
-import {
-  filterTasksToFocusScope,
-  countFocusedTasks,
-} from "$lib/core/focus";
+import { filterTasksToFocusScope } from "$lib/core/focus";
 
 /**
  * Read-only view of the current status filter selection.
@@ -77,12 +74,19 @@ export const filteredProject = derived(
   },
 );
 
-export const focusSummary = derived(
-  statusFilteredProject,
-  ($project) => ({
-    count: $project ? countFocusedTasks($project.tasks) : 0,
-  }),
+export const focusedTasks = derived(taskStore, ($state) =>
+  flattenTasks($state.data.projects)
+    .map(({ task }) => task)
+    .filter((task) => task.isFocused),
 );
+
+export const focusedTaskIds = derived(focusedTasks, ($tasks) =>
+  $tasks.map((task) => task.id),
+);
+
+export const focusSummary = derived(focusedTasks, ($tasks) => ({
+  count: $tasks.length,
+}));
 
 /**
  * Retrieve the currently running task, if any.
