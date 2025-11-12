@@ -1,4 +1,5 @@
 import type { Task } from "./taskTypes";
+import { isDraftPlaceholder } from "./taskFilters";
 
 interface FocusFilterResult {
   tasks: Task[];
@@ -35,16 +36,19 @@ const filterBranch = (
 
   for (const task of tasks) {
     const isFocused = Boolean(task.isFocused);
+    const isDraft = isDraftPlaceholder(task);
     const childResult = filterBranch(task.children, isFocused);
     const childContainsFocus = childResult.containsFocus;
-    const keep = isFocused || childContainsFocus;
+    const keep = isDraft || isFocused || childContainsFocus;
 
     if (!keep) {
       changed = true;
       continue;
     }
 
-    containsFocus = true;
+    if (isFocused || childContainsFocus) {
+      containsFocus = true;
+    }
 
     if (isFocused) {
       filtered.push(task);

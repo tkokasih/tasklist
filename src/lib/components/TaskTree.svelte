@@ -17,6 +17,7 @@
     activityScope,
     activityRange,
   } from "$lib/stores/uiState";
+  import { isDraftPlaceholder } from "$lib/core/taskFilters";
   import {
     dndzone,
     SHADOW_ITEM_MARKER_PROPERTY_NAME,
@@ -103,7 +104,7 @@
       const totalMs = aggregation?.totalMs ?? 0;
       const includeActive = task.status === "in-progress";
       // Keep draft placeholders visible so users can finish editing new tasks even when activity filters exclude them.
-      const includeDraft = task.title.trim().length === 0;
+      const includeDraft = isDraftPlaceholder(task);
 
       if (
         includeDraft ||

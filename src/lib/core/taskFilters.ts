@@ -42,6 +42,12 @@ export const orderStatuses = (statuses: Iterable<TaskStatus>): TaskStatus[] => {
 };
 
 /**
+ * Detect placeholder drafts: tasks whose title is blank during inline creation.
+ */
+export const isDraftPlaceholder = (task: Task): boolean =>
+  task.title.trim().length === 0;
+
+/**
  * Compare two status arrays for strict equality, including order.
  */
 export const statusesEqual = (a: TaskStatus[], b: TaskStatus[]): boolean =>
@@ -64,10 +70,8 @@ export const filterTasksByStatus = (
   for (const task of tasks) {
     const { tasks: filteredChildren, changed: childrenChanged } =
       filterTasksByStatus(task.children, allowed);
-    // Treat blank titles as draft placeholders: they represent newly created tasks
-    // that should remain visible even when their eventual status would be filtered out.
-    const includeSelf =
-      task.title.trim().length === 0 || allowed.has(task.status);
+    // Leave draft placeholders visible even when their status would otherwise be filtered out.
+    const includeSelf = isDraftPlaceholder(task) || allowed.has(task.status);
 
     if (!includeSelf && filteredChildren.length === 0) {
       changed = true;

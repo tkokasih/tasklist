@@ -67,6 +67,25 @@ describe("focus helpers", () => {
     expect(result.tasks[0].children).toHaveLength(2);
   });
 
+  it("keeps draft placeholders visible when they share a focused branch", () => {
+    const leaf = makeTask("leaf", { isFocused: true });
+    const draft = makeTask("draft", { title: "   " });
+    const branch = makeTask("branch", {}, [leaf, draft]);
+    const result = filterTasksToFocusScope([branch]);
+    expect(result.containsFocus).toBe(true);
+    expect(result.tasks[0].children.map((child) => child.id)).toEqual([
+      "leaf",
+      "draft",
+    ]);
+  });
+
+  it("does not treat drafts as focused when no focused tasks exist", () => {
+    const draft = makeTask("draft", { title: "   " });
+    const result = filterTasksToFocusScope([draft]);
+    expect(result.containsFocus).toBe(false);
+    expect(result.tasks).toEqual([]);
+  });
+
   it("counts focused tasks within a tree", () => {
     const tasks = [
       makeTask("a", { isFocused: true }, [makeTask("b"), makeTask("c", { isFocused: true })]),
