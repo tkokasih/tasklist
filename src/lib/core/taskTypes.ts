@@ -26,6 +26,7 @@ export interface Task {
   title: string;
   description?: string;
   status: TaskStatus;
+  isFocused: boolean;
   timeSpentMs: number;
   sessions: TaskSession[];
   children: Task[];

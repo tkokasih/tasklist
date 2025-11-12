@@ -30,6 +30,7 @@ const createTask = (
   id: "task-1",
   title: "Sample",
   status,
+  isFocused: false,
   sessions,
   children: [],
   timeSpentMs: sessions.reduce((sum, s) => sum + s.durationMs, 0),
@@ -172,6 +173,7 @@ describe("aggregateTaskTree", () => {
       id: "parent",
       title: "Parent",
       status: "completed",
+      isFocused: false,
       sessions: [
         createSession(
           iso("2024-01-02", "09:00:00"),
@@ -248,6 +250,7 @@ describe("aggregateProjects", () => {
         timeSpentMs: 2 * 60 * 60 * 1000,
         createdAt: iso("2024-01-01", "00:00:00"),
         updatedAt: iso("2024-01-01", "00:00:00"),
+        isFocused: false,
       },
     ]);
 

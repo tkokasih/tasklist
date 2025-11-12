@@ -481,6 +481,47 @@ export const taskStore = {
     });
   },
 
+  setTaskFocus(taskId: string, isFocused: boolean) {
+    withDataUpdate((data) => {
+      const { projects, changed } = updateTaskById(
+        data.projects,
+        taskId,
+        (task) =>
+          task.isFocused === isFocused
+            ? task
+            : {
+                ...task,
+                isFocused,
+              },
+      );
+
+      if (!changed) {
+        return data;
+      }
+
+      return { ...data, projects };
+    });
+  },
+
+  toggleTaskFocus(taskId: string) {
+    withDataUpdate((data) => {
+      const { projects, changed } = updateTaskById(
+        data.projects,
+        taskId,
+        (task) => ({
+          ...task,
+          isFocused: !task.isFocused,
+        }),
+      );
+
+      if (!changed) {
+        return data;
+      }
+
+      return { ...data, projects };
+    });
+  },
+
   updateSession(
     taskId: string,
     sessionId: string,

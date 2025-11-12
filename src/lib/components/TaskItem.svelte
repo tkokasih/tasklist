@@ -202,6 +202,10 @@
     taskStore.archiveTask(task.id);
   };
 
+  const handleToggleFocus = () => {
+    taskStore.toggleTaskFocus(task.id);
+  };
+
   const handleMoveUp = () => {
     taskStore.moveTaskUp(task.id);
   };
@@ -444,6 +448,7 @@
     onToggleExpand={toggleExpand}
     onStartOrPause={handleStartOrPause}
     onArchive={handleArchive}
+    onToggleFocus={handleToggleFocus}
     onCommitTitle={commitTaskContent}
     onTitleKeydown={handleTitleKeydown}
     onMoveUp={handleMoveUp}

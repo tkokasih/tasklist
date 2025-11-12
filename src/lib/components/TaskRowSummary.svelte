@@ -53,6 +53,7 @@
   export let onMoveDown: () => void = noop;
   export let onComplete: () => void = noop;
   export let onCreateSubtask: () => void = noop;
+  export let onToggleFocus: () => void = noop;
   export let onTitleKeydown: (event: KeyboardEvent) => void = noop;
   export let onSelect: () => void = noop;
   export let reportingMode = false;
@@ -77,7 +78,7 @@
     isPreviewed ? "task-row--preview" : ""
   } ${isSelected && !isActive ? "task-row--selected" : ""} ${
     hasConcurrentSessions ? "task-row--reporting-warning" : ""
-  }`}
+  } ${task.isFocused ? "task-row--focused" : ""}`}
   aria-selected={isSelected}
   on:pointerdown={onSelect}
   on:focusin={onSelect}
@@ -138,6 +139,13 @@
         <span class="task-row__status-dot" aria-hidden="true"></span>
         {statusLabels[task.status]}
       </span>
+
+      {#if task.isFocused}
+        <span class="task-row__focus-badge">
+          <span aria-hidden="true">★</span>
+          <span>Focused</span>
+        </span>
+      {/if}
 
       <div class="task-row__timers">
         <span class="inline-flex items-center gap-1">
@@ -230,6 +238,23 @@
           <span aria-hidden="true">＋</span>
           <span class="sr-only sm:hidden">Add sub-task</span>
           <span class="hidden sm:inline">Subtask</span>
+        </button>
+
+        <button
+          class={`task-row__action task-row__action--focus ${task.isFocused ? "is-active" : ""}`}
+          type="button"
+          aria-pressed={task.isFocused}
+          on:click={onToggleFocus}
+        >
+          {#if task.isFocused}
+            <span aria-hidden="true">★</span>
+            <span class="hidden sm:inline">Focused</span>
+            <span class="sr-only sm:hidden">Remove focus</span>
+          {:else}
+            <span aria-hidden="true">☆</span>
+            <span class="hidden sm:inline">Focus</span>
+            <span class="sr-only sm:hidden">Focus task</span>
+          {/if}
         </button>
 
         <button

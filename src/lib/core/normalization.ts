@@ -125,6 +125,7 @@ export const normalizeTask = (task: Task): Task => {
 
   return {
     ...task,
+    isFocused: Boolean((task as Task & { isFocused?: boolean }).isFocused),
     children,
     sessions,
     timeSpentMs: Math.max(total, totalFromSessions),

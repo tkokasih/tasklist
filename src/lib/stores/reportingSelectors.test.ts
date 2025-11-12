@@ -24,6 +24,7 @@ const makeTask = (
   id: overrides.id,
   title: overrides.title,
   status: overrides.status,
+  isFocused: overrides.isFocused ?? false,
   timeSpentMs: overrides.timeSpentMs ?? 0,
   sessions: overrides.sessions ?? [],
   children: overrides.children ?? [],

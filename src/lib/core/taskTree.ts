@@ -68,6 +68,7 @@ export const createTask = (
     id: generateId(),
     title,
     status: "idle",
+    isFocused: false,
     timeSpentMs: 0,
     sessions: [],
     children: [],
@@ -825,6 +826,10 @@ export const setTaskStatus = (
       sessions: nextSessions,
       archivedAt: status === "archived" ? timestamp : task.archivedAt,
       lastStartedAt,
+      isFocused:
+        status === "completed" || status === "archived"
+          ? false
+          : task.isFocused,
     };
   });
 
