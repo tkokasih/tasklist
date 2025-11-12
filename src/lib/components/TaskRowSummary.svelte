@@ -248,7 +248,7 @@
         >
           {#if task.isFocused}
             <span aria-hidden="true">★</span>
-            <span class="hidden sm:inline">Focused</span>
+            <span class="hidden sm:inline">Focus</span>
             <span class="sr-only sm:hidden">Remove focus</span>
           {:else}
             <span aria-hidden="true">☆</span>
