@@ -101,6 +101,7 @@ const reportingModeWritable = writable(false);
 const activityRangePresetWritable = writable<ActivityRangePresetId>(
   DEFAULT_ACTIVITY_RANGE_PRESET,
 );
+const focusModeWritable = writable(false);
 
 export const reportingMode = {
   subscribe: reportingModeWritable.subscribe,
@@ -108,6 +109,10 @@ export const reportingMode = {
 
 export const activityRangePreset = {
   subscribe: activityRangePresetWritable.subscribe,
+};
+
+export const focusMode = {
+  subscribe: focusModeWritable.subscribe,
 };
 
 export const activityRange = derived(activityRangePresetWritable, (preset) =>
@@ -142,4 +147,12 @@ export const setActivityRangePreset = (preset: ActivityRangePresetId) => {
     return;
   }
   activityRangePresetWritable.set(preset);
+};
+
+export const toggleFocusMode = () => {
+  focusModeWritable.update((current) => !current);
+};
+
+export const setFocusMode = (value: boolean) => {
+  focusModeWritable.set(Boolean(value));
 };

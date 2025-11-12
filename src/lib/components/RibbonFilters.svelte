@@ -2,7 +2,7 @@
   import { DEFAULT_STATUS_FILTERS } from "$lib/core/taskTree";
   import type { TaskStatus } from "$lib/core/taskTypes";
   import { taskStore, ALL_STATUS_VALUES } from "$lib/stores/taskStore";
-  import { statusFilters } from "$lib/stores/taskSelectors";
+  import { statusFilters, focusSummary } from "$lib/stores/taskSelectors";
   import {
     reportingMode,
     activityScope,
@@ -10,6 +10,8 @@
     ACTIVITY_RANGE_PRESETS,
     setReportingMode,
     setActivityRangePreset,
+    focusMode,
+    toggleFocusMode,
   } from "$lib/stores/uiState";
 
   const clone = <T,>(values: Iterable<T>): T[] => Array.from(values);
@@ -68,16 +70,21 @@
   $: activeActivityRangePreset = findActivityRangePreset($activityRangePreset);
   $: activityWindowLabel = activeActivityRangePreset?.label ?? "selected range";
 
+  $: focusCount = $focusSummary.count;
+
+  const formatFocusCount = (count: number) =>
+    `${count} ${count === 1 ? "task" : "tasks"}`;
+
   $: summaryText = (() => {
     const isAllActivity = activeActivityRangePreset?.id === "all";
-    const base = `Showing ${statusSegment}`;
-    if (isAllActivity) {
-      return `${base}`;
+    const segments = [`Showing ${statusSegment}`];
+    if (!isAllActivity && $activityScope) {
+      segments.push(`with activity in ${activityWindowLabel}`);
     }
-    if ($activityScope) {
-      return `${base} with activity in ${activityWindowLabel}`;
+    if ($focusMode) {
+      segments.push(`Focused only (${formatFocusCount(focusCount)})`);
     }
-    return base;
+    return segments.join(" • ");
   })();
 </script>
 
@@ -110,6 +117,26 @@
         {/each}
       </div>
     </div>
+
+    <button
+      type="button"
+      class={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold transition ${
+        $focusMode
+          ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
+      }`}
+      aria-pressed={$focusMode}
+      on:click={toggleFocusMode}
+    >
+      <span class="whitespace-nowrap">Focus Mode</span>
+      <span
+        class={`inline-flex min-w-[2rem] items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+          $focusMode ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-700"
+        }`}
+      >
+        {focusCount}
+      </span>
+    </button>
 
     <div class="flex flex-wrap items-center gap-3">
       <span class="text-xs font-medium tracking-wide text-slate-400 uppercase"

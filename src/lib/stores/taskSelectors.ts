@@ -3,6 +3,11 @@ import { flattenTasks, locateTask } from "$lib/core/taskTree";
 import type { Project, Task, TaskStatus } from "$lib/core/taskTypes";
 import { filterTasksByStatus } from "$lib/core/taskFilters";
 import { taskStore } from "./taskStore";
+import { focusMode } from "./uiState";
+import {
+  filterTasksToFocusScope,
+  countFocusedTasks,
+} from "$lib/core/focus";
 
 /**
  * Read-only view of the current status filter selection.
@@ -27,7 +32,7 @@ export const activeProject = derived(taskStore, ($state): Project | null => {
 /**
  * Active project with tasks constrained to the current status filter set.
  */
-export const filteredProject = derived(
+export const statusFilteredProject = derived(
   [activeProject, statusFilters],
   ([$project, $statuses]): Project | null => {
     if (!$project) {
@@ -46,6 +51,37 @@ export const filteredProject = derived(
 
     return { ...$project, tasks };
   },
+);
+
+export const filteredProject = derived(
+  [statusFilteredProject, focusMode],
+  ([$project, $focusMode]): Project | null => {
+    if (!$project) {
+      return null;
+    }
+
+    if (!$focusMode) {
+      return $project;
+    }
+
+    const { tasks, containsFocus } = filterTasksToFocusScope($project.tasks);
+    if (!containsFocus) {
+      return { ...$project, tasks };
+    }
+
+    if (tasks === $project.tasks) {
+      return $project;
+    }
+
+    return { ...$project, tasks };
+  },
+);
+
+export const focusSummary = derived(
+  statusFilteredProject,
+  ($project) => ({
+    count: $project ? countFocusedTasks($project.tasks) : 0,
+  }),
 );
 
 /**

@@ -10,7 +10,8 @@
   - 2025-11-12: Schema + normalization updated to persist `isFocused` while clearing on archive/complete.
 - [x] Add "Focus" action to `TaskItem` controls so users can select or clear focused items inline.
   - 2025-11-12: Row summary button, badge, and styling shipped for initial focus UX.
-- [ ] Add "Focus Mode" filter/pill in `RibbonFilters.svelte` that toggles the scoped tree view and displays counts.
+- [x] Add "Focus Mode" filter/pill in `RibbonFilters.svelte` that toggles the scoped tree view and displays counts.
+  - 2025-11-12: Ribbon pill toggles the scoped task tree, summary text shows "Focused only" clause with visible counts.
 - [ ] Update `TaskTree` rendering to always include focused tasks, all descendants, and collapsed ancestor breadcrumbs.
 - [ ] Implement optional ancestor one-liner UI that can expand on demand without exiting Focus Mode.
 - [ ] Provide a compact focus summary surface (e.g., sidebar card or ribbon status) with quick clear/promote actions.
