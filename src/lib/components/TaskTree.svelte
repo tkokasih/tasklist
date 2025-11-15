@@ -221,9 +221,9 @@
 <!-- TaskTree orchestrates the root-level task list, optional reporting headers, and new-task entry for a project. -->
 
 {#if renderProject}
-  <div class="space-y-4">
+  <div class="space-y-1">
     <form
-      class="flex flex-col gap-2 rounded border border-dashed border-slate-300 bg-white/60 p-4 md:flex-row"
+      class="flex flex-col gap-2 rounded border border-dashed border-slate-300 bg-white/60 p-2 md:flex-row"
       on:submit|preventDefault={addRootTask}
     >
       <input

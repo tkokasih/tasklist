@@ -4,7 +4,7 @@
   import DataCard from "./DataCard.svelte";
 </script>
 
-<aside class="flex flex-col gap-4">
+<aside class="flex flex-col gap-2">
   <DataCard />
   <TaskDetailsCard />
   <ActiveTasksCard />

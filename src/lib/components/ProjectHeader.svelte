@@ -109,7 +109,7 @@
 </script>
 
 <section
-  class="space-y-4 rounded-2xl border border-slate-200 bg-white/70 p-6 shadow-md"
+  class="space-y-4 rounded-xl border border-slate-200 bg-white/70 p-6 shadow-md"
 >
   <div
     class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"

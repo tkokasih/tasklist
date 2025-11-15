@@ -319,7 +319,7 @@
   }
 
   .task-tree__header-label {
-    @apply text-[11px] font-semibold text-slate-500;
+    @apply text-[15px] font-semibold text-slate-500;
   }
 
   .task-tree__header-columns {

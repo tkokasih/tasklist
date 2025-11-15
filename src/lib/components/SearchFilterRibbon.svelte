@@ -4,7 +4,7 @@
 </script>
 
 <section
-  class="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm shadow-slate-200/50 backdrop-blur-sm"
+  class="rounded-xl border border-slate-200 bg-white/80 p-4 shadow-sm shadow-slate-200/50 backdrop-blur-sm"
   aria-labelledby="tasklist-search-filter-heading"
 >
   <h2 id="tasklist-search-filter-heading" class="sr-only">
