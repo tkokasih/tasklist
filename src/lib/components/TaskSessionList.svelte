@@ -5,7 +5,7 @@
     SessionMutationFailureReason,
     SessionMutationResult,
   } from "$lib/stores/taskStore";
-  import { formatDuration, formatTimestamp } from "$lib/core/time";
+  import { formatDuration } from "$lib/core/time";
   import type { Task, TaskSession } from "$lib/core/taskTypes";
 
   export let task: Task | null = null;
@@ -197,6 +197,53 @@
     applyDeleteResult(result);
   };
 
+  const weekdayFormatter = new Intl.DateTimeFormat(undefined, {
+    weekday: "short",
+  });
+
+  const pad = (value: number) => value.toString().padStart(2, "0");
+
+  const formatFullTimestamp = (date: Date) => {
+    const dayLabel = weekdayFormatter.format(date);
+    const year = date.getFullYear();
+    const month = pad(date.getMonth() + 1);
+    const day = pad(date.getDate());
+    const hours = pad(date.getHours());
+    const minutes = pad(date.getMinutes());
+
+    return `${dayLabel}, ${year}-${month}-${day} ${hours}:${minutes}`;
+  };
+
+  const isSameLocalDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+
+  const formatSessionTimestamp = (
+    iso: string | undefined,
+    options?: { referenceIso?: string },
+  ) => {
+    if (!iso) {
+      return "";
+    }
+
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+      return iso;
+    }
+
+    if (options?.referenceIso) {
+      const referenceDate = new Date(options.referenceIso);
+      if (!Number.isNaN(referenceDate.getTime())) {
+        if (isSameLocalDay(date, referenceDate)) {
+          return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+        }
+      }
+    }
+
+    return formatFullTimestamp(date);
+  };
+
   const formatSessionDuration = (session: TaskSession) =>
     formatDuration(Math.max(0, session.durationMs));
 
@@ -266,93 +313,79 @@
   {#if sortedSessions.length === 0}
     <p class="text-xs text-slate-400 italic">No sessions recorded yet.</p>
   {:else}
-    <div class="space-y-2">
+    <div class="space-y-0">
       {#each sortedSessions as session (session.id)}
-        <div
-          class="rounded-md border border-slate-200 bg-white/70 px-3 py-2 shadow-sm"
+        {@const isEditing = editingSessionId === session.id}
+        <svelte:element
+          this={isEditing ? "form" : "div"}
+          class="rounded-md border border-slate-200 bg-white/70 px-2 py-2 shadow-sm"
+          on:submit|preventDefault={isEditing ? saveSession : undefined}
         >
-          {#if editingSessionId === session.id}
-            <form class="space-y-3" on:submit|preventDefault={saveSession}>
-              <div class="grid gap-3 sm:grid-cols-2">
-                <label
-                  class="flex flex-col gap-1 text-xs font-semibold tracking-wide text-slate-500 uppercase"
-                >
-                  <span class="text-[10px] text-slate-400">Started</span>
-                  <input
-                    class="rounded border border-slate-300 px-2 py-1 text-sm text-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                    type="datetime-local"
-                    bind:value={editStartValue}
-                    required
-                    aria-label="Session start time"
-                  />
-                </label>
-                <label
-                  class="flex flex-col gap-1 text-xs font-semibold tracking-wide text-slate-500 uppercase"
-                >
-                  <span class="text-[10px] text-slate-400">Ended</span>
-                  <input
-                    class="rounded border border-slate-300 px-2 py-1 text-sm text-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                    type="datetime-local"
-                    bind:value={editEndValue}
-                    aria-label="Session end time"
-                  />
-                </label>
-              </div>
-              {#if editingError}
-                <p class="text-xs text-red-600">{editingError}</p>
+          <div class="text-xs text-slate-600">
+            <div
+              class="flex flex-nowrap items-center gap-2 overflow-x-auto text-sm font-medium text-slate-700"
+            >
+              {#if isEditing}
+                <input
+                  class="w-33 rounded border border-slate-300 px-0 py-1 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  type="datetime-local"
+                  step="60"
+                  bind:value={editStartValue}
+                  required
+                  aria-label="Session start time"
+                />
+              {:else}
+                <span class="whitespace-nowrap">
+                  {formatSessionTimestamp(session.startedAt)}
+                </span>
               {/if}
-              <div class="flex flex-wrap items-center gap-2 text-xs">
-                <button
-                  class="inline-flex items-center gap-1 rounded bg-blue-600 px-3 py-1 font-semibold text-white disabled:cursor-not-allowed disabled:bg-blue-400"
-                  type="submit"
-                  disabled={isWorking}
-                >
-                  {#if isWorking}
-                    Saving…
-                  {:else}
-                    Save
-                  {/if}
-                </button>
-                <button
-                  class="inline-flex items-center gap-1 rounded border border-slate-300 px-3 py-1 font-semibold text-slate-600"
-                  type="button"
-                  on:click={cancelEdit}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          {:else}
-            <div class="space-y-2 text-xs text-slate-600">
-              <div class="flex flex-wrap items-start justify-between gap-3">
-                <div class="space-y-1">
-                  <div
-                    class="text-[10px] font-semibold tracking-wide text-slate-400 uppercase"
+              <span class="text-slate-400">→</span>
+              {#if isEditing}
+                <input
+                  class="w-33 rounded border border-slate-300 px-0 py-1 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  type="datetime-local"
+                  step="60"
+                  bind:value={editEndValue}
+                  aria-label="Session end time"
+                />
+              {:else}
+                <span class="whitespace-nowrap">
+                  {session.endedAt
+                    ? formatSessionTimestamp(session.endedAt, {
+                        referenceIso: session.startedAt,
+                      })
+                    : "Active"}
+                </span>
+              {/if}
+            </div>
+            {#if isEditing && editingError}
+              <p class="mt-2 text-xs text-red-600">{editingError}</p>
+            {/if}
+            <div
+              class="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500"
+            >
+              <span>Duration {formatSessionDuration(session)}</span>
+              <div class="flex gap-2 whitespace-nowrap">
+                {#if isEditing}
+                  <button
+                    class="inline-flex items-center gap-1 rounded bg-blue-600 px-3 py-1 font-semibold text-white disabled:cursor-not-allowed disabled:bg-blue-400"
+                    type="submit"
+                    disabled={isWorking}
                   >
-                    Started
-                  </div>
-                  <div class="text-sm font-medium text-slate-700">
-                    {formatTimestamp(session.startedAt)}
-                  </div>
-                </div>
-                <div class="space-y-1 text-right">
-                  <div
-                    class="text-[10px] font-semibold tracking-wide text-slate-400 uppercase"
+                    {#if isWorking}
+                      Saving…
+                    {:else}
+                      Save
+                    {/if}
+                  </button>
+                  <button
+                    class="inline-flex items-center gap-1 rounded border border-slate-300 px-3 py-1 font-semibold text-slate-600"
+                    type="button"
+                    on:click={cancelEdit}
                   >
-                    Ended
-                  </div>
-                  <div class="text-sm font-medium text-slate-700">
-                    {session.endedAt
-                      ? formatTimestamp(session.endedAt)
-                      : "Active"}
-                  </div>
-                </div>
-              </div>
-              <div
-                class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500"
-              >
-                <span>Duration {formatSessionDuration(session)}</span>
-                <div class="flex gap-2">
+                    Cancel
+                  </button>
+                {:else}
                   <button
                     class="text-blue-600 hover:text-blue-500 disabled:cursor-not-allowed disabled:text-slate-300"
                     type="button"
@@ -369,11 +402,11 @@
                   >
                     Delete
                   </button>
-                </div>
+                {/if}
               </div>
             </div>
-          {/if}
-        </div>
+          </div>
+        </svelte:element>
       {/each}
     </div>
   {/if}

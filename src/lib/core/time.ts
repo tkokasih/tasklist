@@ -9,11 +9,7 @@ export const formatDuration = (ms: number): string => {
 
   const pad = (value: number) => value.toString().padStart(2, "0");
 
-  if (hours > 0) {
-    return `${hours}:${pad(minutes)}:${pad(seconds)}`;
-  }
-
-  return `${pad(minutes)}:${pad(seconds)}`;
+  return `${hours}h ${minutes}m`;
 };
 
 /**

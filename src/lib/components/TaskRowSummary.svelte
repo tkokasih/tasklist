@@ -67,6 +67,8 @@
   $: reportingRangeTotalLabel = formatRangeValue(
     reportingAggregation?.totalMs ?? 0,
   );
+  $: sessionCount = task.sessions?.length ?? 0;
+  $: sessionCountLabel = `(${sessionCount}  session)`;
 </script>
 
 <!-- TaskRowSummary handles the visual layout and interaction affordances for each task row in the tree. -->
@@ -156,6 +158,7 @@
           >
             <span aria-hidden="true">∞</span>
             <span>Lifetime {formatDuration(task.timeSpentMs)}</span>
+            <span>{sessionCountLabel}</span>
           </span>
         {:else}
           <span
@@ -168,6 +171,7 @@
               <span>Session {formatDuration(activeSessionElapsed)} | </span>
             {/if}
             <span>Total {formatDuration(task.timeSpentMs)}</span>
+            <span>{sessionCountLabel}</span>
           </span>
         {/if}
       </div>
