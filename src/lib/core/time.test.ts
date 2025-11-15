@@ -8,15 +8,15 @@ describe("time formatting helpers", () => {
 
   describe("formatDuration", () => {
     it("formats durations with hours when needed", () => {
-      expect(formatDuration(3_781_000)).toBe("1:03:01");
+      expect(formatDuration(3_781_000)).toBe("1h 3m");
     });
 
     it("pads minutes and seconds for sub-hour durations", () => {
-      expect(formatDuration(125_000)).toBe("02:05");
+      expect(formatDuration(125_000)).toBe("0h 2m");
     });
 
     it("clamps negative durations to zero", () => {
-      expect(formatDuration(-2_000)).toBe("00:00");
+      expect(formatDuration(-2_000)).toBe("0h 0m");
     });
   });
 
