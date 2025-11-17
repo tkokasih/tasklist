@@ -28,6 +28,7 @@
   export let reportingMode = false;
   export let reportingColumns: ReportingColumnDefinition[] = [];
   export let reportingTotals: Map<string, SessionAggregation> = EMPTY_TOTALS;
+  export let reportingTotalsSelf: Map<string, SessionAggregation> = EMPTY_TOTALS;
   export let reportingConcurrentTaskIds: Set<string> = EMPTY_CONCURRENCY_IDS;
   export let reportingIncludesChildren = false;
 
@@ -41,6 +42,7 @@
   let pendingReapplyFocus = false;
   let isTitleMultiline = false;
   let reportingAggregation: SessionAggregation | null = null;
+  let reportingAggregationSelf: SessionAggregation | null = null;
   let hasConcurrentSessions = false;
   let skipNextBlurCommit = false;
   let childZoneItems: TaskDndItem[] = [];
@@ -416,6 +418,8 @@
   // Pull cached reporting totals for this task and flag days with overlapping sessions.
   $: {
     reportingAggregation = reportingTotals.get(task.id) ?? null;
+    reportingAggregationSelf =
+      reportingTotalsSelf.get(task.id) ?? reportingAggregation;
     hasConcurrentSessions =
       Boolean(reportingAggregation?.concurrentSessionsDetected) ||
       reportingConcurrentTaskIds.has(task.id);
@@ -427,11 +431,11 @@
 <!-- TaskItem renders a single task row and recursively nests any child tasks. -->
 
 <div class="mb-0 space-y-0" style={`margin-left: ${indent}rem`}>
-  <TaskRowSummary
-    {task}
-    {expanded}
-    hasChildren={task.children.length > 0}
-    bind:editing
+      <TaskRowSummary
+        {task}
+        {expanded}
+        hasChildren={task.children.length > 0}
+        bind:editing
     bind:draftContent
     bind:titleInput={titleField}
     {isTitleMultiline}
@@ -441,11 +445,12 @@
     {isPreviewed}
     {latestSession}
     {activeSessionElapsed}
-    {reportingMode}
-    {reportingColumns}
-    {reportingAggregation}
-    {reportingIncludesChildren}
-    {hasConcurrentSessions}
+        {reportingMode}
+        {reportingColumns}
+        {reportingAggregation}
+        reportingAggregationSelf={reportingAggregationSelf}
+        {reportingIncludesChildren}
+        {hasConcurrentSessions}
     onSelect={selectTask}
     onToggleExpand={toggleExpand}
     onStartOrPause={handleStartOrPause}

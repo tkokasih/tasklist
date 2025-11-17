@@ -57,6 +57,7 @@
   export let reportingMode = false;
   export let reportingColumns: ReportingColumnDefinition[] = [];
   export let reportingAggregation: SessionAggregation | null = null;
+  export let reportingAggregationSelf: SessionAggregation | null = null;
   export let hasConcurrentSessions = false;
   export let reportingIncludesChildren = false;
 
@@ -74,16 +75,25 @@
   $: reportingBucketSource = reportingIncludesChildren
     ? reportingAggregation?.inclusiveBuckets
     : reportingAggregation?.buckets;
+  $: inclusiveRangeMs = reportingAggregation?.inclusiveMs ?? 0;
+  $: baseRangeMs =
+    reportingAggregationSelf?.totalMs ?? reportingAggregation?.totalMs ?? 0;
+  $: childRangeMs = Math.max(0, inclusiveRangeMs - baseRangeMs);
+  $: hasChildRangeContribution = reportingIncludesChildren && childRangeMs > 0;
+  $: reportingRangeLabel =
+    reportingIncludesChildren && hasChildRangeContribution
+      ? "Range (+subtasks)"
+      : "Range";
 </script>
 
 <!-- TaskRowSummary handles the visual layout and interaction affordances for each task row in the tree. -->
 
-<div
-  class={`task-row ${rowStatusStyles[task.status]} ${isActive ? "task-row--active" : ""} ${
-    isPreviewed ? "task-row--preview" : ""
-  } ${isSelected && !isActive ? "task-row--selected" : ""} ${
-    hasConcurrentSessions ? "task-row--reporting-warning" : ""
-  } ${task.isFocused ? "task-row--focused" : ""}`}
+  <div
+    class={`task-row ${rowStatusStyles[task.status]} ${isActive ? "task-row--active" : ""} ${
+      isPreviewed ? "task-row--preview" : ""
+    } ${isSelected && !isActive ? "task-row--selected" : ""} ${
+      hasConcurrentSessions ? "task-row--reporting-warning" : ""
+    } ${task.isFocused ? "task-row--focused" : ""}`}
   aria-selected={isSelected}
   on:pointerdown={onSelect}
   on:focusin={onSelect}
@@ -155,13 +165,13 @@
       <div class="task-row__timers">
         {#if reportingMode}
           <span
-            class={`inline-flex items-center gap-1 task-row__range-total ${
-              reportingIncludesChildren ? "task-row__range-total--inclusive" : ""
+            class={`inline-flex items-center gap-2 task-row__range-total ${
+              hasChildRangeContribution ? "task-row__range-total--inclusive" : ""
             }`}
           >
             <span aria-hidden="true">⏱</span>
-            <span>
-              {reportingIncludesChildren ? "Range (incl. subtasks)" : "Range"}
+            <span class="task-row__range-label">
+              {reportingRangeLabel}
               {` ${reportingRangeTotalLabel}`}
             </span>
           </span>
@@ -207,6 +217,10 @@
               } ${column.isWeekend ? "task-row__reporting-column--weekend" : ""} ${
                 hasConcurrentSessions && column.isToday
                   ? "task-row__reporting-column--warning"
+                  : ""
+              } ${
+                hasChildRangeContribution
+                  ? "task-row__reporting-column--with-children"
                   : ""
               }`}
               aria-label={`${column.label}: ${columnValue === placeholderDuration ? "No time logged" : columnValue}`}

@@ -152,6 +152,18 @@
     @apply text-rose-600 font-semibold;
   }
 
+  .task-row__range-label {
+    @apply inline-flex flex-wrap items-center gap-1;
+  }
+
+  .task-row__reporting-column--with-children {
+    @apply bg-rose-50/80 text-rose-700;
+  }
+
+  .task-row__reporting-column--with-children .task-row__reporting-column-value {
+    @apply text-rose-700 font-semibold;
+  }
+
   .task-row__actions {
     @apply flex flex-wrap items-center justify-end gap-1 text-xs font-semibold;
     opacity: 0.1;

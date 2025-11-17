@@ -309,6 +309,7 @@
               reportingMode={isReportingMode}
               reportingColumns={reportingDayColumns}
               {reportingTotals}
+              reportingTotalsSelf={reportingTotalsSelf}
               reportingConcurrentTaskIds={concurrentTaskIds}
               reportingIncludesChildren={includeDescendants}
             />
