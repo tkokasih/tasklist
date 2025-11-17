@@ -12,6 +12,8 @@
     setActivityRangePreset,
     focusMode,
     toggleFocusMode,
+    reportingIncludeChildren,
+    toggleReportingIncludeChildren,
   } from "$lib/stores/uiState";
 
   const clone = <T,>(values: Iterable<T>): T[] => Array.from(values);
@@ -227,6 +229,31 @@
         </span>
         <span>{$reportingMode ? "On" : "Off"}</span>
       </button>
+      {#if $reportingMode}
+        <button
+          type="button"
+          class={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold transition ${
+            $reportingIncludeChildren
+              ? "border-rose-500 bg-rose-50 text-rose-600 hover:bg-rose-100"
+              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
+          }`}
+          on:click={toggleReportingIncludeChildren}
+          aria-pressed={$reportingIncludeChildren}
+          title="Add descendant time into each parent total"
+        >
+          <span
+            class={`inline-flex h-4 w-4 items-center justify-center rounded-full border text-[10px] font-bold ${
+              $reportingIncludeChildren
+                ? "border-transparent bg-rose-500 text-white"
+                : ""
+            }`}
+            aria-hidden="true"
+          >
+            +
+          </span>
+          <span>Include subtasks</span>
+        </button>
+      {/if}
     </div>
   </div>
 

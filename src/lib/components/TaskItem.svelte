@@ -29,6 +29,7 @@
   export let reportingColumns: ReportingColumnDefinition[] = [];
   export let reportingTotals: Map<string, SessionAggregation> = EMPTY_TOTALS;
   export let reportingConcurrentTaskIds: Set<string> = EMPTY_CONCURRENCY_IDS;
+  export let reportingIncludesChildren = false;
 
   let expanded = true;
   let editing = false;
@@ -443,6 +444,7 @@
     {reportingMode}
     {reportingColumns}
     {reportingAggregation}
+    {reportingIncludesChildren}
     {hasConcurrentSessions}
     onSelect={selectTask}
     onToggleExpand={toggleExpand}
@@ -486,6 +488,7 @@
               {reportingColumns}
               {reportingTotals}
               {reportingConcurrentTaskIds}
+              {reportingIncludesChildren}
             />
           {/if}
         {/if}

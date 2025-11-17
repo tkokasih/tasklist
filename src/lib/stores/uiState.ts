@@ -102,6 +102,7 @@ const activityRangePresetWritable = writable<ActivityRangePresetId>(
   DEFAULT_ACTIVITY_RANGE_PRESET,
 );
 const focusModeWritable = writable(false);
+const reportingIncludeChildrenWritable = writable(false);
 
 export const reportingMode = {
   subscribe: reportingModeWritable.subscribe,
@@ -113,6 +114,10 @@ export const activityRangePreset = {
 
 export const focusMode = {
   subscribe: focusModeWritable.subscribe,
+};
+
+export const reportingIncludeChildren = {
+  subscribe: reportingIncludeChildrenWritable.subscribe,
 };
 
 export const activityRange = derived(activityRangePresetWritable, (preset) =>
@@ -137,6 +142,14 @@ export const toggleReportingMode = () => {
 
 export const setReportingMode = (value: boolean) => {
   reportingModeWritable.set(Boolean(value));
+};
+
+export const toggleReportingIncludeChildren = () => {
+  reportingIncludeChildrenWritable.update((current) => !current);
+};
+
+export const setReportingIncludeChildren = (value: boolean) => {
+  reportingIncludeChildrenWritable.set(Boolean(value));
 };
 
 export const setActivityRangePreset = (preset: ActivityRangePresetId) => {

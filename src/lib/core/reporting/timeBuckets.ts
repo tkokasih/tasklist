@@ -27,6 +27,12 @@ export interface SessionAggregation {
    * after clamping sessions to the requested reporting window.
    */
   buckets: Record<string, number>;
+  /**
+   * Total duration including all descendant tasks assigned to the same bucket scope.
+   * Mirrors `totalMs` / `buckets` when no children exist.
+   */
+  inclusiveMs: number;
+  inclusiveBuckets: Record<string, number>;
   concurrentSessionsDetected: boolean;
 }
 
@@ -62,17 +68,35 @@ export const aggregateTaskTree = (
 ): AggregationResult => {
   const taskTotals = new Map<string, SessionAggregation>();
 
-  const walk = (task: Task) => {
+  const walk = (task: Task): SessionAggregation | null => {
     if (!shouldIncludeTask(task, options)) {
-      return;
+      return null;
     }
 
     const aggregation = bucketSessionsForRange(task, range, options);
-    taskTotals.set(task.id, aggregation);
+    let inclusiveBuckets = aggregation.inclusiveBuckets;
+    let inclusiveMs = aggregation.inclusiveMs;
 
     for (const child of task.children ?? []) {
-      walk(child);
+      const childAggregation = walk(child);
+      if (!childAggregation) {
+        continue;
+      }
+      inclusiveMs += childAggregation.inclusiveMs;
+      inclusiveBuckets = mergeBuckets(
+        inclusiveBuckets,
+        childAggregation.inclusiveBuckets,
+      );
     }
+
+    const nextAggregation: SessionAggregation = {
+      ...aggregation,
+      inclusiveMs,
+      inclusiveBuckets,
+    };
+
+    taskTotals.set(task.id, nextAggregation);
+    return nextAggregation;
   };
 
   walk(root);
@@ -103,6 +127,11 @@ export const aggregateProjects = (
           taskId,
           totalMs: existing.totalMs + aggregation.totalMs,
           buckets: mergeBuckets(existing.buckets, aggregation.buckets),
+          inclusiveMs: existing.inclusiveMs + aggregation.inclusiveMs,
+          inclusiveBuckets: mergeBuckets(
+            existing.inclusiveBuckets,
+            aggregation.inclusiveBuckets,
+          ),
           concurrentSessionsDetected:
             existing.concurrentSessionsDetected ||
             aggregation.concurrentSessionsDetected,
@@ -135,6 +164,8 @@ export const bucketSessionsForRange = (
       taskId: task.id,
       totalMs: 0,
       buckets: {},
+      inclusiveMs: 0,
+      inclusiveBuckets: {},
       concurrentSessionsDetected: false,
     };
   }
@@ -148,6 +179,8 @@ export const bucketSessionsForRange = (
     taskId: task.id,
     totalMs,
     buckets,
+    inclusiveMs: totalMs,
+    inclusiveBuckets: { ...buckets },
     concurrentSessionsDetected,
   };
 };

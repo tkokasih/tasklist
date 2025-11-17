@@ -16,6 +16,7 @@
     reportingMode,
     activityScope,
     activityRange,
+    reportingIncludeChildren,
   } from "$lib/stores/uiState";
   import { isDraftPlaceholder } from "$lib/core/taskFilters";
   import {
@@ -48,12 +49,15 @@
   });
   let reportingResult: ReportingSelectorResult | null = null;
   let reportingTotals: Map<string, SessionAggregation> = EMPTY_TOTALS;
+  let reportingTotalsSelf: Map<string, SessionAggregation> = EMPTY_TOTALS;
+  let reportingTotalsInclusive: Map<string, SessionAggregation> = EMPTY_TOTALS;
   let reportingWarnings: ReportingWarning[] = EMPTY_WARNINGS;
   let concurrentTaskIds = new Set<string>();
   let rootZoneItems: TaskDndItem[] = [];
   let rootDragActive = false;
   let taskLookup: Map<string, Task> = new Map();
   let rootRenderList: Task[] = [];
+  let includeDescendants = false;
 
   const DND_ZONE_TYPE = "task-tree";
   const DND_FLIP_DURATION_MS = 150;
@@ -141,8 +145,14 @@
       includeCompleted,
     });
   }
+  $: includeDescendants = $reportingIncludeChildren;
   $: reportingResult = $reportingSelector;
-  $: reportingTotals = reportingResult?.totals ?? EMPTY_TOTALS;
+  $: reportingTotalsSelf = reportingResult?.totals ?? EMPTY_TOTALS;
+  $: reportingTotalsInclusive =
+    reportingResult?.inclusiveTotals ?? EMPTY_TOTALS;
+  $: reportingTotals = includeDescendants
+    ? reportingTotalsInclusive
+    : reportingTotalsSelf;
   $: reportingWarnings = reportingResult?.warnings ?? EMPTY_WARNINGS;
   // Flag any tasks that have overlapping sessions so TaskItem can surface a warning state.
   $: concurrentTaskIds = new Set(
@@ -300,6 +310,7 @@
               reportingColumns={reportingDayColumns}
               {reportingTotals}
               reportingConcurrentTaskIds={concurrentTaskIds}
+              reportingIncludesChildren={includeDescendants}
             />
           {/if}
         {/if}

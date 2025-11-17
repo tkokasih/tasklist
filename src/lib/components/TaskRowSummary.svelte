@@ -58,17 +58,22 @@
   export let reportingColumns: ReportingColumnDefinition[] = [];
   export let reportingAggregation: SessionAggregation | null = null;
   export let hasConcurrentSessions = false;
+  export let reportingIncludesChildren = false;
 
   const placeholderDuration = "—";
   // Reporting columns show a dash when a bucket has no time for clarity.
   const formatRangeValue = (ms: number) =>
     ms > 0 ? formatDuration(ms) : placeholderDuration;
 
-  $: reportingRangeTotalLabel = formatRangeValue(
-    reportingAggregation?.totalMs ?? 0,
-  );
+  $: reportingRangeValue = reportingIncludesChildren
+    ? reportingAggregation?.inclusiveMs ?? 0
+    : reportingAggregation?.totalMs ?? 0;
+  $: reportingRangeTotalLabel = formatRangeValue(reportingRangeValue);
   $: sessionCount = task.sessions?.length ?? 0;
   $: sessionCountLabel = `(${sessionCount}  session)`;
+  $: reportingBucketSource = reportingIncludesChildren
+    ? reportingAggregation?.inclusiveBuckets
+    : reportingAggregation?.buckets;
 </script>
 
 <!-- TaskRowSummary handles the visual layout and interaction affordances for each task row in the tree. -->
@@ -149,9 +154,16 @@
 
       <div class="task-row__timers">
         {#if reportingMode}
-          <span class="inline-flex items-center gap-1">
+          <span
+            class={`inline-flex items-center gap-1 task-row__range-total ${
+              reportingIncludesChildren ? "task-row__range-total--inclusive" : ""
+            }`}
+          >
             <span aria-hidden="true">⏱</span>
-            <span>Range {reportingRangeTotalLabel}</span>
+            <span>
+              {reportingIncludesChildren ? "Range (incl. subtasks)" : "Range"}
+              {` ${reportingRangeTotalLabel}`}
+            </span>
           </span>
           <span
             class="inline-flex items-center gap-1 text-xs text-slate-500 sm:text-sm"
@@ -187,7 +199,7 @@
           <span class="task-row__reporting-empty">No reporting columns</span>
         {:else}
           {#each reportingColumns as column (column.id)}
-            {@const bucketMs = reportingAggregation?.buckets?.[column.id] ?? 0}
+            {@const bucketMs = reportingBucketSource?.[column.id] ?? 0}
             {@const columnValue = formatRangeValue(bucketMs)}
             <div
               class={`task-row__reporting-column ${

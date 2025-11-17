@@ -18,6 +18,7 @@ export interface ReportingWarning {
 export interface ReportingSelectorResult {
   range: TimeRangeConfig;
   totals: Map<string, SessionAggregation>;
+  inclusiveTotals: Map<string, SessionAggregation>;
   warnings: ReportingWarning[];
 }
 
@@ -63,6 +64,20 @@ const cloneRange = (range: TimeRangeConfig): TimeRangeConfig => ({
   end: new Date(range.end.getTime()),
 });
 
+const buildInclusiveTotals = (
+  source: Map<string, SessionAggregation>,
+): Map<string, SessionAggregation> => {
+  const next = new Map<string, SessionAggregation>();
+  for (const [taskId, aggregation] of source.entries()) {
+    next.set(taskId, {
+      ...aggregation,
+      totalMs: aggregation.inclusiveMs,
+      buckets: aggregation.inclusiveBuckets,
+    });
+  }
+  return next;
+};
+
 const collectWarnings = (
   totals: Map<string, SessionAggregation>,
 ): ReportingWarning[] => {
@@ -100,6 +115,7 @@ export const createTimeAggregationSelector = (
       return {
         range: normalizedRange,
         totals: new Map<string, SessionAggregation>(),
+        inclusiveTotals: new Map<string, SessionAggregation>(),
         warnings: [],
       };
     }
@@ -109,11 +125,13 @@ export const createTimeAggregationSelector = (
       normalizedRange,
       normalizedOptions,
     );
+    const inclusiveTotals = buildInclusiveTotals(aggregated.taskTotals);
     const warnings = collectWarnings(aggregated.taskTotals);
 
     return {
       range: aggregated.range,
       totals: aggregated.taskTotals,
+      inclusiveTotals,
       warnings,
     };
   });

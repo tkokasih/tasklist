@@ -97,6 +97,48 @@ describe("aggregateSessions", () => {
     expect(result.concurrentSessionsDetected).toBe(true);
   });
 
+  it("returns inclusive totals/buckets that roll up descendant durations", () => {
+    const parent = createTask(
+      [
+        createSession(
+          iso("2024-01-03", "08:00:00"),
+          iso("2024-01-03", "09:00:00"),
+          60 * 60 * 1000,
+        ),
+      ],
+      "completed",
+    );
+    const child = createTask(
+      [
+        createSession(
+          iso("2024-01-03", "09:30:00"),
+          iso("2024-01-03", "10:00:00"),
+          30 * 60 * 1000,
+        ),
+      ],
+      "in-progress",
+    );
+    parent.id = "parent-task";
+    child.id = "child-task";
+    parent.children.push(child);
+
+    const result = aggregateTaskTree(
+      parent,
+      range(iso("2024-01-01", "00:00:00"), iso("2024-01-31", "23:59:59")),
+    );
+
+    const parentAggregation = result.taskTotals.get(parent.id);
+    expect(parentAggregation?.totalMs).toBe(60 * 60 * 1000);
+    expect(parentAggregation?.inclusiveMs).toBe(90 * 60 * 1000);
+    expect(parentAggregation?.inclusiveBuckets["2024-01-03"]).toBe(
+      90 * 60 * 1000,
+    );
+    expect(parentAggregation?.buckets["2024-01-03"]).toBe(60 * 60 * 1000);
+
+    const childAggregation = result.taskTotals.get(child.id);
+    expect(childAggregation?.inclusiveMs).toBe(childAggregation?.totalMs);
+  });
+
   it("falls back to duration when end timestamp is missing or equal to start", () => {
     const session = createSession(
       iso("2024-01-05", "09:00:00"),

@@ -116,6 +116,12 @@ describe("reportingSelectors", () => {
     expect(result.totals.get("task-parent")?.totalMs).toBe(60 * 60 * 1000);
     expect(result.totals.get("task-child")?.totalMs).toBe(30 * 60 * 1000);
     expect(result.warnings).toEqual([]);
+    expect(result.inclusiveTotals.get("task-parent")?.totalMs).toBe(
+      90 * 60 * 1000,
+    );
+    expect(result.inclusiveTotals.get("task-child")?.totalMs).toBe(
+      30 * 60 * 1000,
+    );
   });
 
   it("memoizes selectors per store/range/options combination", () => {
@@ -158,6 +164,9 @@ describe("reportingSelectors", () => {
     expect(getResult(selector).totals.get("task-1")?.totalMs).toBe(
       60 * 60 * 1000,
     );
+    expect(getResult(selector).inclusiveTotals.get("task-1")?.totalMs).toBe(
+      60 * 60 * 1000,
+    );
 
     const updatedProject = makeProject("A", [
       makeTask({
@@ -177,6 +186,9 @@ describe("reportingSelectors", () => {
 
     store.set({ data: withProjects([updatedProject]) });
     expect(getResult(selector).totals.get("task-1")?.totalMs).toBe(
+      2 * 60 * 60 * 1000,
+    );
+    expect(getResult(selector).inclusiveTotals.get("task-1")?.totalMs).toBe(
       2 * 60 * 60 * 1000,
     );
   });

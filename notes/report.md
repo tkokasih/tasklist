@@ -76,6 +76,7 @@
 - Capture the first 60-second tick sample using the new instrumentation and update this note with observed numbers.
 - Sketch how aggregated maps flow into reporting mode data structures to validate selector API requirements and drive UI shape.
 - Prepare lightweight mockups for reporting mode to align on column layout before Iteration 3 work.
+- [x] Inclusive duration toggle (Updated Nov 15, 2025) — Selector-level rollups now emit inclusive totals/buckets, Ribbon gains an “Include subtasks” pill that tints range totals red when active, and TaskTree/TaskRowSummary consume the toggle without re-traversing the tree.
 
 ## Reporting Data Flow Sketch
 

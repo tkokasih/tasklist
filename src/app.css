@@ -144,6 +144,14 @@
     @apply flex flex-wrap items-center gap-2 text-[11px] font-medium text-slate-600;
   }
 
+  .task-row__range-total {
+    @apply text-xs;
+  }
+
+  .task-row__range-total--inclusive {
+    @apply text-rose-600 font-semibold;
+  }
+
   .task-row__actions {
     @apply flex flex-wrap items-center justify-end gap-1 text-xs font-semibold;
     opacity: 0.1;
