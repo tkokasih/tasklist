@@ -1,0 +1,116 @@
+<script lang="ts">
+  import CollapsibleCard from "./CollapsibleCard.svelte";
+  import TaskSessionList from "./TaskSessionList.svelte";
+  import { selectedTask } from "$lib/stores/taskSelectors";
+  import { formatDuration, formatTimestamp } from "$lib/core/time";
+  import type { Task, TaskStatus } from "$lib/core/taskTypes";
+
+  // Sidebar card that surfaces rich task metadata and session history for the selection.
+  const statusLabels: Record<TaskStatus, string> = {
+    archived: "Archived",
+    completed: "Completed",
+    idle: "Idle",
+    "in-progress": "In progress",
+    paused: "Paused",
+  };
+
+  const statusStyles: Record<TaskStatus, string> = {
+    archived: "task-row__status--archived",
+    completed: "task-row__status--completed",
+    idle: "task-row__status--idle",
+    "in-progress": "task-row__status--active",
+    paused: "task-row__status--paused",
+  };
+
+  // Many timestamp fields are optional, so normalize missing values to a friendly dash.
+  const formatOptionalTimestamp = (value: string | undefined) =>
+    value ? formatTimestamp(value) : "—";
+
+  let task: Task | null = null;
+
+  $: task = $selectedTask;
+</script>
+
+<!-- TaskDetailsCard lives in the sidebar and reveals metadata plus recent sessions for the focused task. -->
+
+<CollapsibleCard title="Task Details" subtitle="Focus on a task to inspect it">
+  {#if task}
+    <div class="space-y-4 text-sm">
+      <div class="space-y-1">
+        <h4 class="text-base font-semibold break-words text-slate-800">
+          {task.title}
+        </h4>
+        {#if task.description?.trim()}
+          <p class="text-xs leading-relaxed whitespace-pre-line text-slate-600">
+            {task.description}
+          </p>
+        {:else}
+          <p class="text-xs text-slate-400 italic">No description yet.</p>
+        {/if}
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 text-[11px] font-medium">
+        <span class={`task-row__status ${statusStyles[task.status]}`}>
+          {statusLabels[task.status]}
+        </span>
+        <span
+          class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-slate-600"
+        >
+          <span aria-hidden="true">⏱</span>
+          {formatDuration(task.timeSpentMs)}
+        </span>
+        <span
+          class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-slate-600"
+        >
+          <span aria-hidden="true">🧩</span>
+          {task.children.length} subtask{task.children.length === 1 ? "" : "s"}
+        </span>
+      </div>
+
+      <dl class="grid grid-cols-1 gap-3 text-xs text-slate-600 sm:grid-cols-2">
+        <div>
+          <dt
+            class="text-[10px] font-semibold tracking-wide text-slate-400 uppercase"
+          >
+            Created
+          </dt>
+          <dd class="mt-1 text-slate-700">{formatTimestamp(task.createdAt)}</dd>
+        </div>
+        <div>
+          <dt
+            class="text-[10px] font-semibold tracking-wide text-slate-400 uppercase"
+          >
+            Last updated
+          </dt>
+          <dd class="mt-1 text-slate-700">{formatTimestamp(task.updatedAt)}</dd>
+        </div>
+        <div>
+          <dt
+            class="text-[10px] font-semibold tracking-wide text-slate-400 uppercase"
+          >
+            Last started
+          </dt>
+          <dd class="mt-1 text-slate-700">
+            {formatOptionalTimestamp(task.lastStartedAt)}
+          </dd>
+        </div>
+        <div>
+          <dt
+            class="text-[10px] font-semibold tracking-wide text-slate-400 uppercase"
+          >
+            Archived
+          </dt>
+          <dd class="mt-1 text-slate-700">
+            {formatOptionalTimestamp(task.archivedAt)}
+          </dd>
+        </div>
+      </dl>
+      <!-- Keep the session breakdown close to the metadata so context stays in one place. -->
+      <TaskSessionList {task} />
+    </div>
+  {:else}
+    <p class="text-sm text-slate-500">
+      Select a task in the list to view its current status and history here.
+    </p>
+  {/if}
+</CollapsibleCard>

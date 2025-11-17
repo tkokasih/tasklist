@@ -1,27 +1,55 @@
-<section class="flex flex-col items-center gap-6 px-6 py-20 text-center sm:py-24">
-	<h1 class="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">Tasklist</h1>
-	<p class="max-w-2xl text-lg text-slate-600 sm:text-xl">
-		Build a modern task manager powered by SvelteKit and deployed with GitHub Pages.
-	</p>
-	<a
-		class="inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-blue-500 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
-		href="https://github.com/tkokasih/tasklist"
-	>
-		View the repo
-	</a>
-</section>
+<script lang="ts">
+  import {
+    activeProject,
+    filteredProject,
+    ProjectHeader,
+    SearchFilterRibbon,
+    SidePanel,
+    TaskTree,
+  } from "$lib";
 
-<section class="mx-auto w-full max-w-4xl rounded-3xl bg-white/70 px-6 py-12 backdrop-blur shadow-lg shadow-slate-200/60 sm:px-10">
-	<h2 class="mb-8 text-center text-2xl font-semibold text-slate-900">Why this stack?</h2>
-	<ul class="grid gap-4 text-left sm:grid-cols-3">
-		<li class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm shadow-slate-200/40">
-			SvelteKit for fast, composable user interfaces.
-		</li>
-		<li class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm shadow-slate-200/40">
-			Static adapter for a zero-server SPA.
-		</li>
-		<li class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm shadow-slate-200/40">
-			Continuous deployment with GitHub Actions.
-		</li>
-	</ul>
-</section>
+  $: project = $activeProject;
+  $: visibleProject = $filteredProject ?? project;
+  $: showFilteredEmpty = Boolean(
+    project &&
+      visibleProject &&
+      project.tasks.length > 0 &&
+      visibleProject.tasks.length === 0,
+  );
+  $: emptyMessage = showFilteredEmpty
+    ? "No tasks match the current status filters."
+    : "No tasks yet. Create your first task to get started.";
+</script>
+
+<main class="min-h-screen bg-slate-100 py-2">
+  <div class="relative mx-auto w-full max-w-[120rem] px-2">
+    <div class="flex flex-col gap-1 lg:pr-[26rem]">
+      <ProjectHeader />
+      <SearchFilterRibbon />
+
+      <section
+        class="rounded-xl border border-slate-200 bg-white/90 p-6 pt-4 shadow-lg shadow-slate-200/70"
+      >
+        <TaskTree project={visibleProject} {emptyMessage} />
+      </section>
+
+      <div class="lg:hidden">
+        <SidePanel />
+      </div>
+    </div>
+
+    <div class="pointer-events-none hidden lg:block">
+      <div class="pointer-events-auto fixed top-2 right-6 w-[24rem]">
+        <div
+          class="side-panel-shell rounded-l border border-slate-200 bg-white/90 shadow-xl ring-1 shadow-slate-400/10 ring-white/70"
+        >
+          <div
+            class="side-panel-scroll max-h-[calc(100vh-1rem)] overflow-y-auto py-4 px-0.5 pr-2"
+          >
+            <SidePanel />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
